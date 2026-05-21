@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aetherstem"
-version = "0.1.0"
+version = "0.2.0"
 description = "AI-assisted music source separation platform"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -27,6 +27,16 @@ dependencies = [
     "typer",
     "pyyaml",
     "tqdm",
+    "pyloudnorm",
+    "matplotlib",
+    "pillow",
+    "pydantic>=2.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-cov",
 ]
 
 [project.scripts]

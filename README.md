@@ -56,20 +56,49 @@ aetherstem inspect <path-to-audio-file>
 ```bash
 aetherstem process <path-to-audio-file>
 ```
-Converted files are stored in the `temp/` directory by default.
+Enforces conversion of the input file into a 96kHz, 32-bit float WAV file.
+
+### Analyze Audio File
+```bash
+aetherstem analyze <path-to-audio-file>
+```
+Runs the full pipeline: inspects metadata, preprocesses, calculates loudness (EBU R128 metrics, True Peak, LRA), performs spectral analysis, stereo/phase analysis, counts clipping, estimates noise floor/dynamic range, generates visualizations (spectrogram, waveform, vectorscope, phase correlation graph), and saves a JSON report under `reports/`.
+
+### Quick Lossy Detector
+```bash
+aetherstem detect-lossy <path-to-audio-file>
+```
+Checks if the file was likely upsampled or transcoded from a lossy source (e.g. 128kbps, 192kbps, 320kbps MP3/AAC) based on high-frequency cutoff heuristics.
+
+### Generate Visualizations
+```bash
+aetherstem spectrogram <path-to-audio-file>
+aetherstem waveform <path-to-audio-file>
+aetherstem phase <path-to-audio-file>
+```
+Specifically generates the requested plots (Spectrogram, Waveform, Vectorscope/Phase Correlation Graph) and outputs them to the `output/` directory.
+
+## Running Tests
+
+To run the unit and integration tests:
+```bash
+pytest
+```
 
 ## Project Structure
 
-- `cli/`: Command-line interface logic.
-- `io/`: Audio input/output and conversion utilities.
-- `utils/`: Common utilities (logging, config loading).
-- `configs/`: YAML configuration files.
-- `pipeline/`: Future AI processing pipeline.
-- `dsp/`: Digital Signal Processing components.
-- `models/`: AI model definitions and checkpoints.
+- `cli/`: Typer CLI and command runner logic.
+- `audio_io/`: Audio file loading, safe conversion, and metadata inspection.
+- `dsp/`: Core digital signal processing (loudness, spectral analysis, stereo, phase, clipping, noise floor, visualizer).
+- `pipeline/`: Orchestrates the step-based analysis workflow.
+- `models/`: Strongly typed Pydantic models (AudioMetadata, AudioAnalysis, etc.) and future AI model abstractions.
+- `configs/`: YAML configurations for processing.
+- `cache/`: Caching layer for analysis results.
+- `reports/`: Target output folder for JSON reports.
+- `output/`: Folder for generated PNG plots.
 - `logs/`: Application log files.
-- `temp/`: Temporary processing artifacts.
-- `output/`: Final processed output.
+- `tests/`: Pytest test suite.
+- `docs/`: Technical and design documentation.
 
 ## License
 
