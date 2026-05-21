@@ -35,6 +35,13 @@ The CLI SHALL provide `aetherstem preset <preset-name> <input>` for YAML-defined
 - **WHEN** the user runs `aetherstem preset archival_restore input.flac`
 - **THEN** the archival restore preset is validated and executed
 
+### Requirement: Batch Command
+The CLI SHALL provide `aetherstem batch <folder>` to recursively process supported audio files with isolated per-file results.
+
+#### Scenario: Batch processing a folder
+- **WHEN** the user runs `aetherstem batch ./music/`
+- **THEN** supported audio files under the folder are queued and processed with per-file isolation, progress reporting, and structured exports
+
 ### Requirement: Benchmark Command
 The CLI SHALL provide `aetherstem benchmark <input>` to measure processing performance and quality metrics.
 
