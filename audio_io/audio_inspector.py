@@ -75,9 +75,9 @@ def inspect_audio(input_path: Path) -> Dict[str, Any]:
 def validate_input(input_path: Path) -> bool:
     """
     Validates that the input file is in a supported format and is stereo.
-    Supported formats: WAV, FLAC, MP3, M4A.
+    Supported formats: WAV, FLAC, MP3, M4A, Opus.
     """
-    supported_extensions = {".wav", ".flac", ".mp3", ".m4a"}
+    supported_extensions = {".wav", ".flac", ".mp3", ".m4a", ".opus"}
     if input_path.suffix.lower() not in supported_extensions:
         logger.error(f"Unsupported file extension: {input_path.suffix}. Supported: {supported_extensions}")
         return False

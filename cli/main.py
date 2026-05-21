@@ -58,7 +58,7 @@ def process(
         raise typer.Exit(code=1)
 
     if not validate_input(input_path):
-        console.print("[red]Validation failed.[/red] Please ensure the file is stereo and in a supported format (WAV, FLAC, MP3, M4A).")
+        console.print("[red]Validation failed.[/red] Please ensure the file is stereo and in a supported format (WAV, FLAC, MP3, M4A, Opus).")
         raise typer.Exit(code=1)
 
     try:
