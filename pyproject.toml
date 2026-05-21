@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aetherstem"
+version = "0.1.0"
+description = "AI-assisted music source separation platform"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    { name = "AetherStem Team" },
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: Microsoft :: Windows",
+    "Topic :: Multimedia :: Sound/Audio :: Analysis",
+]
+dependencies = [
+    "numpy",
+    "scipy",
+    "soundfile",
+    "librosa",
+    "ffmpeg-python",
+    "pydub",
+    "rich",
+    "typer",
+    "pyyaml",
+    "tqdm",
+]
+
+[project.scripts]
+aetherstem = "cli.main:app"
+
+[tool.setuptools]
+packages = ["cli", "pipeline", "dsp", "audio_io", "models", "utils"]

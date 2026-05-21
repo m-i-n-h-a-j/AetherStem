@@ -1,0 +1,25 @@
+# AetherStem Default Configuration
+
+# Audio Processing Settings
+audio:
+  sample_rate: 96000          # Target sample rate (Hz)
+  channels: 2                 # Target channels (Stereo)
+  bit_depth: 32               # Target bit depth (float)
+  format: "wav"               # Target format
+
+# DSP / AI Pipeline Settings
+pipeline:
+  chunk_size: 4096            # Number of samples per chunk
+  overlap_ratio: 0.25         # Overlap ratio between chunks
+  hop_length: 1024            # Calculated as chunk_size * (1 - overlap_ratio)
+
+# Path Settings
+paths:
+  temp_dir: "temp"
+  output_dir: "output"
+  logs_dir: "logs"
+
+# Metadata
+metadata:
+  app_name: "AetherStem"
+  version: "0.1.0"

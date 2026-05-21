@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+ENV/
+build/
+dist/
+*.egg-info/
+.mypy_cache/
+.pytest_cache/
+.tox/
+
+# AI / Machine Learning
+models/checkpoints/
+*.pth
+*.pt
+*.ckpt
+*.h5
+*.onnx
+
+# Audio (Temp/Output)
+temp/*
+output/*
+logs/*.log
+!temp/.gitkeep
+!output/.gitkeep
+!logs/.gitkeep
+
+# Common audio formats (to avoid accidental commits of large datasets)
+*.wav
+*.flac
+*.mp3
+*.m4a
+*.ogg
+*.aiff
+
+# IDEs / Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Environment Variables
+.env
+.env.local
+
+# OpenSpec / Gemini CLI
+.gemini/
+.antigravitycli/
+.codex/
+.agent/
