@@ -40,6 +40,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Validation JSON: {json_path}")
     print(f"Validation HTML: {html_path}")
     print(f"Validation summary: {report.summary()}")
+    _print_failures(report)
     return 0 if report.passed else 1
 
 
@@ -134,6 +135,18 @@ def _run_command(command: list[str]) -> None:
     completed = subprocess.run(command, cwd=ROOT, text=True, capture_output=True, check=False)
     if completed.returncode != 0:
         raise AssertionError({"command": command, "stdout": completed.stdout[-4000:], "stderr": completed.stderr[-4000:]})
+
+
+def _print_failures(report: ValidationReport) -> None:
+    failures = [check for check in report.checks if check.status == "failed"]
+    if not failures:
+        return
+    print("Validation failures:")
+    for check in failures:
+        print(f"- [{check.tier}] {check.name}")
+        error = check.details.get("error")
+        if error:
+            print(error)
 
 
 def _static_command(module: str) -> list[str]:
