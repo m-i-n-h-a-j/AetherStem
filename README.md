@@ -183,12 +183,18 @@ Run the quick validation pipeline:
 python -m validation.run_full_validation --quick
 ```
 
+To make ruff, mypy, and pyright findings blocking during local cleanup, add strict static validation:
+
+```bash
+python -m validation.run_full_validation --quick --strict-static
+```
+
 The runner writes:
 
 - `reports/validation/validation_report.json`
 - `reports/validation/validation_report.html`
 
-Current required checks cover config validation, import graph validation, pytest, deterministic synthetic DSP roundtrips, and synthetic golden-reference comparisons. Enterprise tiers such as hardware scalability, long-duration stability, fuzzing, perceptual regression, backend equivalence, and streaming validation are scaffolded as explicit validation tiers and tracked in `openspec/changes/aetherstem-validation-framework-v1-0/`.
+Current required checks cover config validation, import graph validation, pytest, deterministic synthetic DSP roundtrips, and synthetic golden-reference comparisons. Ruff, mypy, and pyright run as advisory checks in quick mode until the legacy static-analysis baseline is cleaned up. Enterprise tiers such as hardware scalability, long-duration stability, fuzzing, perceptual regression, backend equivalence, and streaming validation are scaffolded as explicit validation tiers and tracked in `openspec/changes/aetherstem-validation-framework-v1-0/`.
 
 ## Project Structure
 

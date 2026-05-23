@@ -5,7 +5,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Iterable
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 
 PROJECT_PACKAGES = {"ai", "audio_io", "benchmarks", "cli", "dsp", "models", "pipeline", "utils", "validation"}

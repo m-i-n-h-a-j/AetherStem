@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Literal
 
 import numpy as np
-from scipy import signal
+from scipy import signal  # type: ignore[import-untyped]
 
 
 DegradationKind = Literal["lowpass", "clipping", "bitcrush", "stereo_collapse", "transient_smear"]

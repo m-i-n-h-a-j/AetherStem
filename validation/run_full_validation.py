@@ -1,17 +1,19 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import shutil
 import subprocess
 import sys
 from pathlib import Path
 from time import perf_counter
+from typing import Any
 
 import numpy as np
 
 from validation.golden import GoldenReference, compare_golden_reference
 from validation.metrics import compare_audio
-from validation.reporting import ValidationCheck, ValidationReport
+from validation.reporting import CheckStatus, ValidationCheck, ValidationReport
 from validation.static_checks import validate_config_schema, validate_import_graph
 from validation.synthetic_audio import generate_synthetic_suite
 
@@ -23,10 +25,11 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run the AetherStem validation laboratory checks.")
     parser.add_argument("--output-dir", type=Path, default=ROOT / "reports" / "validation")
     parser.add_argument("--quick", action="store_true", help="Skip optional heavyweight stages.")
+    parser.add_argument("--strict-static", action="store_true", help="Fail on ruff, mypy, and pyright findings.")
     args = parser.parse_args(argv)
 
     report = ValidationReport()
-    _run_static_validation(report)
+    _run_static_validation(report, strict=args.strict_static)
     _run_unit_tests(report)
     _run_dsp_verification(report)
     _run_golden_reference_checks(report)
@@ -40,7 +43,7 @@ def main(argv: list[str] | None = None) -> int:
     return 0 if report.passed else 1
 
 
-def _run_static_validation(report: ValidationReport) -> None:
+def _run_static_validation(report: ValidationReport, strict: bool) -> None:
     _timed(report, "tier1-static", "config-schema", lambda: _assert_no_errors(validate_config_schema(ROOT / "configs" / "default.yaml")))
     _timed(
         report,
@@ -49,12 +52,18 @@ def _run_static_validation(report: ValidationReport) -> None:
         lambda: _assert_no_errors(validate_import_graph(_project_python_files())),
     )
     for module in ("ruff", "mypy", "pyright"):
-        executable = shutil.which(module)
-        if executable is None:
+        if not _tool_available(module):
             report.add(ValidationCheck("tier1-static", module, "skipped", {"reason": "tool not installed"}))
             continue
         command = _static_command(module)
-        _timed(report, "tier1-static", module, lambda command=command: _run_command(command))
+        _timed(
+            report,
+            "tier1-static",
+            module,
+            lambda command=command: _run_command(command),
+            failure_status="failed" if strict else "skipped",
+            failure_details={"reason": "advisory static check failed; pass --strict-static to make this blocking"},
+        )
 
 
 def _run_unit_tests(report: ValidationReport) -> None:
@@ -102,15 +111,22 @@ def _record_deferred_enterprise_tiers(report: ValidationReport, quick: bool) -> 
         report.add(ValidationCheck(tier, "enterprise-suite", "skipped", details))
 
 
-def _timed(report: ValidationReport, tier: str, name: str, func) -> None:
+def _timed(
+    report: ValidationReport,
+    tier: str,
+    name: str,
+    func,
+    failure_status: CheckStatus = "failed",
+    failure_details: dict[str, Any] | None = None,
+) -> None:
     started = perf_counter()
     try:
         func()
-        status = "passed"
-        details = {}
+        status: CheckStatus = "passed"
+        details: dict[str, Any] = {}
     except Exception as exc:
-        status = "failed"
-        details = {"error": str(exc)}
+        status = failure_status
+        details = {"error": str(exc), **(failure_details or {})}
     report.add(ValidationCheck(tier, name, status, details, (perf_counter() - started) * 1000))
 
 
@@ -122,10 +138,14 @@ def _run_command(command: list[str]) -> None:
 
 def _static_command(module: str) -> list[str]:
     if module == "ruff":
-        return [module, "check", "."]
+        return [sys.executable, "-m", module, "check", "."]
     if module == "mypy":
-        return [module, "ai", "audio_io", "benchmarks", "cli", "dsp", "models", "pipeline", "utils", "validation"]
-    return [module]
+        return [sys.executable, "-m", module, "ai", "audio_io", "benchmarks", "cli", "dsp", "models", "pipeline", "utils", "validation"]
+    return [sys.executable, "-m", module]
+
+
+def _tool_available(module: str) -> bool:
+    return importlib.util.find_spec(module) is not None or shutil.which(module) is not None
 
 
 def _assert_no_errors(errors: list[str]) -> None:
