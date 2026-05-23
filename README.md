@@ -167,6 +167,29 @@ To run the unit and integration tests:
 pytest
 ```
 
+## Validation Framework
+
+AetherStem also includes a v1.0 validation framework for higher-confidence regression checks across static structure, unit tests, DSP correctness, golden-reference comparison, and report generation.
+
+Install the validation extras when you want the full static toolchain available:
+
+```bash
+pip install -e ".[validation]"
+```
+
+Run the quick validation pipeline:
+
+```bash
+python -m validation.run_full_validation --quick
+```
+
+The runner writes:
+
+- `reports/validation/validation_report.json`
+- `reports/validation/validation_report.html`
+
+Current required checks cover config validation, import graph validation, pytest, deterministic synthetic DSP roundtrips, and synthetic golden-reference comparisons. Enterprise tiers such as hardware scalability, long-duration stability, fuzzing, perceptual regression, backend equivalence, and streaming validation are scaffolded as explicit validation tiers and tracked in `openspec/changes/aetherstem-validation-framework-v1-0/`.
+
 ## Project Structure
 
 - `cli/`: Typer CLI and command runner logic.
@@ -189,6 +212,8 @@ pytest
 - `output/`: Folder for generated PNG plots.
 - `logs/`: Application log files.
 - `tests/`: Pytest test suite.
+- `validation/`: Validation framework runner, metrics, synthetic fixture generation, golden-reference comparison, and report contracts.
+- `golden_references/`, `fuzzing/`, `performance/`, `fixtures/`, `synthetic_audio/`, `degradation_profiles/`: Validation lab directories for reference corpora, generated fixtures, fuzz cases, performance data, and controlled degradation profiles.
 - `docs/`: Technical and design documentation.
 
 ## License

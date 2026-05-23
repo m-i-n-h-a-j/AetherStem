@@ -11,8 +11,8 @@ class RuntimeTracer:
         self.max_events = max_events
         self._events: deque[RuntimeEvent] = deque(maxlen=max_events)
 
-    def emit(self, name: str, **payload: Any) -> None:
-        self._events.append(RuntimeEvent(name=name, payload=payload))
+    def emit(self, event_name: str, **payload: Any) -> None:
+        self._events.append(RuntimeEvent(name=event_name, payload=payload))
 
     def events(self) -> list[RuntimeEvent]:
         return list(self._events)
@@ -31,4 +31,3 @@ class RuntimeTracer:
                 for event in self._events
             ],
         }
-

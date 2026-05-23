@@ -1,0 +1,1118 @@
+{
+  "workflow": "reconstruct",
+  "render": "exports\\vocals_layers_reconstruct\\reconstruct.wav",
+  "source_report": {
+    "source": {
+      "likely_source": "Likely lossy transcode",
+      "estimated_bitrate_kbps": 192,
+      "lossy_probability": 0.6960301364946566,
+      "transcode_probability": 0.7024195887215268,
+      "confidence": 0.7836105477731298
+    },
+    "artifacts": {
+      "spectral_cutoff_hz": 6298.828125,
+      "codec_ringing": 1.0,
+      "transient_smear": 0.16702100236389517,
+      "stereo_collapse": 1.0,
+      "clipping_detected": false,
+      "limiter_detected": false,
+      "phase_corruption": 0.5,
+      "spectral_sparsity": 0.826973146225298,
+      "temporal_inconsistency": 0.16702100236389517,
+      "detected_artifacts": [
+        "spectral cutoff",
+        "codec ringing",
+        "stereo collapse"
+      ]
+    },
+    "spectral": {
+      "centroid_hz": 2106.8588780113355,
+      "rolloff_hz": 14718.75,
+      "bandwidth_hz": 4482.445719381016,
+      "ceiling_hz": 6298.828125,
+      "high_frequency_energy_ratio": 0.03580460277198553,
+      "spectral_flatness": 0.17302685377470198
+    },
+    "feasibility": {
+      "potential": "Moderate",
+      "score": 0.5499999999999999,
+      "recommended_stages": [
+        "spectral_repair",
+        "bandwidth_extension",
+        "harmonic_regeneration",
+        "stereo_reconstruction",
+        "psychoacoustic_optimization",
+        "mastering"
+      ],
+      "caveats": [
+        "Output is perceptual reconstruction, not original master recovery."
+      ]
+    },
+    "confidence": {
+      "confidence": 0.7836105477731298,
+      "uncertainty": 0.21638945222687023,
+      "rationale": [
+        "spectral ceiling and artifact heuristics",
+        "confidence is probabilistic and not proof of original source"
+      ]
+    },
+    "philosophy": "AetherStem performs plausible reconstruction and remastering, not true lossless recovery.",
+    "metadata": {}
+  },
+  "stage_diagnostics": [
+    {
+      "stage": "denoise",
+      "diagnostics": {
+        "mode": "gentle deterministic smoothing"
+      }
+    },
+    {
+      "stage": "spectral_repair",
+      "diagnostics": {
+        "method": "deterministic spectral continuity smoothing"
+      }
+    },
+    {
+      "stage": "harmonic_regeneration",
+      "diagnostics": {
+        "amount": 0.035,
+        "phase_aware": true
+      }
+    },
+    {
+      "stage": "bandwidth_extension",
+      "diagnostics": {
+        "method": "harmonic-aware deterministic HF synthesis"
+      }
+    },
+    {
+      "stage": "transient_recovery",
+      "diagnostics": {
+        "attack_amount": 0.04,
+        "overshoot_prevented": false
+      }
+    },
+    {
+      "stage": "stereo_reconstruction",
+      "diagnostics": {
+        "width_gain": 1.08,
+        "mono_compatible": true
+      }
+    },
+    {
+      "stage": "dynamic_recovery",
+      "diagnostics": {
+        "input_peak": 0.8873634338378906
+      }
+    },
+    {
+      "stage": "psychoacoustic_optimization",
+      "diagnostics": {
+        "masking_aware": true,
+        "fatigue_reduction": "conservative"
+      }
+    },
+    {
+      "stage": "mastering",
+      "diagnostics": {
+        "profile": "hifi",
+        "target_peak": 0.96
+      }
+    }
+  ],
+  "evaluation": {
+    "reconstruction_score": 0.9249999999999999,
+    "artifact_reduction_score": 1.0,
+    "spectral_recovery_score": 0.5057803220719085,
+    "stereo_integrity_score": 0.775,
+    "transient_quality_score": 1.0,
+    "mastering_consistency_score": 1.0,
+    "clipping_after": 0,
+    "restoration_potential": "Moderate",
+    "confidence": 0.7836105477731298
+  },
+  "telemetry": {
+    "summary": {
+      "event_count": 102,
+      "counts": {
+        "reconstruction_pass_started": 5,
+        "reconstruction_stage_started": 46,
+        "reconstruction_stage_completed": 46,
+        "reconstruction_pass_completed": 5
+      }
+    },
+    "events": [
+      {
+        "name": "reconstruction_pass_started",
+        "timestamp": 1779549096.8694897,
+        "payload": {
+          "index": 1,
+          "name": "artifact_analysis"
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549097.1966417,
+        "payload": {
+          "stage": "declip"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549097.2343426,
+        "payload": {
+          "stage": "declip",
+          "diagnostics": {
+            "clipped_samples": 9502
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549097.2343426,
+        "payload": {
+          "stage": "denoise"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549097.2762978,
+        "payload": {
+          "stage": "denoise",
+          "diagnostics": {
+            "mode": "gentle deterministic smoothing"
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549097.2762978,
+        "payload": {
+          "stage": "spectral_repair"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549097.318418,
+        "payload": {
+          "stage": "spectral_repair",
+          "diagnostics": {
+            "method": "deterministic spectral continuity smoothing"
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549097.318418,
+        "payload": {
+          "stage": "harmonic_regeneration"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549097.3663774,
+        "payload": {
+          "stage": "harmonic_regeneration",
+          "diagnostics": {
+            "amount": 0.035,
+            "phase_aware": true
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549097.3663774,
+        "payload": {
+          "stage": "bandwidth_extension"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549097.428453,
+        "payload": {
+          "stage": "bandwidth_extension",
+          "diagnostics": {
+            "method": "harmonic-aware deterministic HF synthesis"
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549097.428453,
+        "payload": {
+          "stage": "transient_recovery"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549097.4709406,
+        "payload": {
+          "stage": "transient_recovery",
+          "diagnostics": {
+            "attack_amount": 0.04,
+            "overshoot_prevented": false
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549097.4709406,
+        "payload": {
+          "stage": "stereo_reconstruction"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549097.5617082,
+        "payload": {
+          "stage": "stereo_reconstruction",
+          "diagnostics": {
+            "width_gain": 1.08,
+            "mono_compatible": true
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549097.5617082,
+        "payload": {
+          "stage": "dynamic_recovery"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549097.7367866,
+        "payload": {
+          "stage": "dynamic_recovery",
+          "diagnostics": {
+            "input_peak": 0.8580160140991211
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549097.7367866,
+        "payload": {
+          "stage": "psychoacoustic_optimization"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549097.820469,
+        "payload": {
+          "stage": "psychoacoustic_optimization",
+          "diagnostics": {
+            "masking_aware": true,
+            "fatigue_reduction": "conservative"
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549097.820469,
+        "payload": {
+          "stage": "mastering"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549097.8513398,
+        "payload": {
+          "stage": "mastering",
+          "diagnostics": {
+            "profile": "hifi",
+            "target_peak": 0.96
+          }
+        }
+      },
+      {
+        "name": "reconstruction_pass_completed",
+        "timestamp": 1779549101.1064444,
+        "payload": {
+          "index": 1,
+          "name": "artifact_analysis"
+        }
+      },
+      {
+        "name": "reconstruction_pass_started",
+        "timestamp": 1779549101.1064444,
+        "payload": {
+          "index": 2,
+          "name": "restoration"
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549101.5731578,
+        "payload": {
+          "stage": "denoise"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549101.648598,
+        "payload": {
+          "stage": "denoise",
+          "diagnostics": {
+            "mode": "gentle deterministic smoothing"
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549101.648598,
+        "payload": {
+          "stage": "spectral_repair"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549101.7463555,
+        "payload": {
+          "stage": "spectral_repair",
+          "diagnostics": {
+            "method": "deterministic spectral continuity smoothing"
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549101.7463555,
+        "payload": {
+          "stage": "harmonic_regeneration"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549101.8718605,
+        "payload": {
+          "stage": "harmonic_regeneration",
+          "diagnostics": {
+            "amount": 0.035,
+            "phase_aware": true
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549101.8718605,
+        "payload": {
+          "stage": "bandwidth_extension"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549101.9665403,
+        "payload": {
+          "stage": "bandwidth_extension",
+          "diagnostics": {
+            "method": "harmonic-aware deterministic HF synthesis"
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549101.9665403,
+        "payload": {
+          "stage": "transient_recovery"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549102.037998,
+        "payload": {
+          "stage": "transient_recovery",
+          "diagnostics": {
+            "attack_amount": 0.04,
+            "overshoot_prevented": false
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549102.037998,
+        "payload": {
+          "stage": "stereo_reconstruction"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549102.1363378,
+        "payload": {
+          "stage": "stereo_reconstruction",
+          "diagnostics": {
+            "width_gain": 1.08,
+            "mono_compatible": true
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549102.1363378,
+        "payload": {
+          "stage": "dynamic_recovery"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549102.3665667,
+        "payload": {
+          "stage": "dynamic_recovery",
+          "diagnostics": {
+            "input_peak": 0.8661007285118103
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549102.3665667,
+        "payload": {
+          "stage": "psychoacoustic_optimization"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549102.4367273,
+        "payload": {
+          "stage": "psychoacoustic_optimization",
+          "diagnostics": {
+            "masking_aware": true,
+            "fatigue_reduction": "conservative"
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549102.4367273,
+        "payload": {
+          "stage": "mastering"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549102.4600687,
+        "payload": {
+          "stage": "mastering",
+          "diagnostics": {
+            "profile": "hifi",
+            "target_peak": 0.96
+          }
+        }
+      },
+      {
+        "name": "reconstruction_pass_completed",
+        "timestamp": 1779549105.4585924,
+        "payload": {
+          "index": 2,
+          "name": "restoration"
+        }
+      },
+      {
+        "name": "reconstruction_pass_started",
+        "timestamp": 1779549105.4585924,
+        "payload": {
+          "index": 3,
+          "name": "bandwidth_reconstruction"
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549105.9864585,
+        "payload": {
+          "stage": "denoise"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549106.0689828,
+        "payload": {
+          "stage": "denoise",
+          "diagnostics": {
+            "mode": "gentle deterministic smoothing"
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549106.0689828,
+        "payload": {
+          "stage": "spectral_repair"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549106.140931,
+        "payload": {
+          "stage": "spectral_repair",
+          "diagnostics": {
+            "method": "deterministic spectral continuity smoothing"
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549106.140931,
+        "payload": {
+          "stage": "harmonic_regeneration"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549106.2288833,
+        "payload": {
+          "stage": "harmonic_regeneration",
+          "diagnostics": {
+            "amount": 0.035,
+            "phase_aware": true
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549106.2288833,
+        "payload": {
+          "stage": "bandwidth_extension"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549106.326593,
+        "payload": {
+          "stage": "bandwidth_extension",
+          "diagnostics": {
+            "method": "harmonic-aware deterministic HF synthesis"
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549106.326593,
+        "payload": {
+          "stage": "transient_recovery"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549106.392883,
+        "payload": {
+          "stage": "transient_recovery",
+          "diagnostics": {
+            "attack_amount": 0.04,
+            "overshoot_prevented": false
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549106.392883,
+        "payload": {
+          "stage": "stereo_reconstruction"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549106.4724922,
+        "payload": {
+          "stage": "stereo_reconstruction",
+          "diagnostics": {
+            "width_gain": 1.08,
+            "mono_compatible": true
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549106.4724922,
+        "payload": {
+          "stage": "dynamic_recovery"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549106.6548636,
+        "payload": {
+          "stage": "dynamic_recovery",
+          "diagnostics": {
+            "input_peak": 0.873665988445282
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549106.6548636,
+        "payload": {
+          "stage": "psychoacoustic_optimization"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549106.7167425,
+        "payload": {
+          "stage": "psychoacoustic_optimization",
+          "diagnostics": {
+            "masking_aware": true,
+            "fatigue_reduction": "conservative"
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549106.7167425,
+        "payload": {
+          "stage": "mastering"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549106.7366965,
+        "payload": {
+          "stage": "mastering",
+          "diagnostics": {
+            "profile": "hifi",
+            "target_peak": 0.96
+          }
+        }
+      },
+      {
+        "name": "reconstruction_pass_completed",
+        "timestamp": 1779549109.5465674,
+        "payload": {
+          "index": 3,
+          "name": "bandwidth_reconstruction"
+        }
+      },
+      {
+        "name": "reconstruction_pass_started",
+        "timestamp": 1779549109.5465674,
+        "payload": {
+          "index": 4,
+          "name": "mastering"
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549109.9469295,
+        "payload": {
+          "stage": "denoise"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549110.0265517,
+        "payload": {
+          "stage": "denoise",
+          "diagnostics": {
+            "mode": "gentle deterministic smoothing"
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549110.0265517,
+        "payload": {
+          "stage": "spectral_repair"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549110.112798,
+        "payload": {
+          "stage": "spectral_repair",
+          "diagnostics": {
+            "method": "deterministic spectral continuity smoothing"
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549110.112798,
+        "payload": {
+          "stage": "harmonic_regeneration"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549110.2165432,
+        "payload": {
+          "stage": "harmonic_regeneration",
+          "diagnostics": {
+            "amount": 0.035,
+            "phase_aware": true
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549110.2165432,
+        "payload": {
+          "stage": "bandwidth_extension"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549110.3865206,
+        "payload": {
+          "stage": "bandwidth_extension",
+          "diagnostics": {
+            "method": "harmonic-aware deterministic HF synthesis"
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549110.3865206,
+        "payload": {
+          "stage": "transient_recovery"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549110.4565847,
+        "payload": {
+          "stage": "transient_recovery",
+          "diagnostics": {
+            "attack_amount": 0.04,
+            "overshoot_prevented": false
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549110.4565847,
+        "payload": {
+          "stage": "stereo_reconstruction"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549110.5386083,
+        "payload": {
+          "stage": "stereo_reconstruction",
+          "diagnostics": {
+            "width_gain": 1.08,
+            "mono_compatible": true
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549110.5386083,
+        "payload": {
+          "stage": "dynamic_recovery"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549110.6991735,
+        "payload": {
+          "stage": "dynamic_recovery",
+          "diagnostics": {
+            "input_peak": 0.8807434439659119
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549110.6991735,
+        "payload": {
+          "stage": "psychoacoustic_optimization"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549110.756674,
+        "payload": {
+          "stage": "psychoacoustic_optimization",
+          "diagnostics": {
+            "masking_aware": true,
+            "fatigue_reduction": "conservative"
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549110.756674,
+        "payload": {
+          "stage": "mastering"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549110.776672,
+        "payload": {
+          "stage": "mastering",
+          "diagnostics": {
+            "profile": "hifi",
+            "target_peak": 0.96
+          }
+        }
+      },
+      {
+        "name": "reconstruction_pass_completed",
+        "timestamp": 1779549113.5164812,
+        "payload": {
+          "index": 4,
+          "name": "mastering"
+        }
+      },
+      {
+        "name": "reconstruction_pass_started",
+        "timestamp": 1779549113.5164812,
+        "payload": {
+          "index": 5,
+          "name": "perceptual_optimization"
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549113.9865792,
+        "payload": {
+          "stage": "denoise"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549114.0567353,
+        "payload": {
+          "stage": "denoise",
+          "diagnostics": {
+            "mode": "gentle deterministic smoothing"
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549114.0567353,
+        "payload": {
+          "stage": "spectral_repair"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549114.1464043,
+        "payload": {
+          "stage": "spectral_repair",
+          "diagnostics": {
+            "method": "deterministic spectral continuity smoothing"
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549114.1464043,
+        "payload": {
+          "stage": "harmonic_regeneration"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549114.230795,
+        "payload": {
+          "stage": "harmonic_regeneration",
+          "diagnostics": {
+            "amount": 0.035,
+            "phase_aware": true
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549114.230795,
+        "payload": {
+          "stage": "bandwidth_extension"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549114.3563347,
+        "payload": {
+          "stage": "bandwidth_extension",
+          "diagnostics": {
+            "method": "harmonic-aware deterministic HF synthesis"
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549114.3563347,
+        "payload": {
+          "stage": "transient_recovery"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549114.416884,
+        "payload": {
+          "stage": "transient_recovery",
+          "diagnostics": {
+            "attack_amount": 0.04,
+            "overshoot_prevented": false
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549114.416884,
+        "payload": {
+          "stage": "stereo_reconstruction"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549114.4963076,
+        "payload": {
+          "stage": "stereo_reconstruction",
+          "diagnostics": {
+            "width_gain": 1.08,
+            "mono_compatible": true
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549114.4963076,
+        "payload": {
+          "stage": "dynamic_recovery"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549114.6809309,
+        "payload": {
+          "stage": "dynamic_recovery",
+          "diagnostics": {
+            "input_peak": 0.8873634338378906
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549114.6809309,
+        "payload": {
+          "stage": "psychoacoustic_optimization"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549114.7487104,
+        "payload": {
+          "stage": "psychoacoustic_optimization",
+          "diagnostics": {
+            "masking_aware": true,
+            "fatigue_reduction": "conservative"
+          }
+        }
+      },
+      {
+        "name": "reconstruction_stage_started",
+        "timestamp": 1779549114.7487104,
+        "payload": {
+          "stage": "mastering"
+        }
+      },
+      {
+        "name": "reconstruction_stage_completed",
+        "timestamp": 1779549114.7724152,
+        "payload": {
+          "stage": "mastering",
+          "diagnostics": {
+            "profile": "hifi",
+            "target_peak": 0.96
+          }
+        }
+      },
+      {
+        "name": "reconstruction_pass_completed",
+        "timestamp": 1779549117.566305,
+        "payload": {
+          "index": 5,
+          "name": "perceptual_optimization"
+        }
+      }
+    ]
+  },
+  "profile": {
+    "reconstruction": "extreme",
+    "mastering": "hifi",
+    "target_rate": 192000,
+    "multi_pass": true,
+    "philosophy": "plausible reconstruction, not true lossless recovery",
+    "passes": [
+      {
+        "index": 1,
+        "name": "artifact_analysis",
+        "evaluation": {
+          "reconstruction_score": 0.9249999999999999,
+          "artifact_reduction_score": 1.0,
+          "spectral_recovery_score": 0.5111039430299289,
+          "stereo_integrity_score": 0.775,
+          "transient_quality_score": 1.0,
+          "mastering_consistency_score": 1.0,
+          "clipping_after": 0,
+          "restoration_potential": "Moderate",
+          "confidence": 0.8100702618660315
+        }
+      },
+      {
+        "index": 2,
+        "name": "restoration",
+        "evaluation": {
+          "reconstruction_score": 0.9249999999999999,
+          "artifact_reduction_score": 1.0,
+          "spectral_recovery_score": 0.5048717045558407,
+          "stereo_integrity_score": 0.775,
+          "transient_quality_score": 1.0,
+          "mastering_consistency_score": 1.0,
+          "clipping_after": 0,
+          "restoration_potential": "Moderate",
+          "confidence": 0.7804888923902383
+        }
+      },
+      {
+        "index": 3,
+        "name": "bandwidth_reconstruction",
+        "evaluation": {
+          "reconstruction_score": 0.9249999999999999,
+          "artifact_reduction_score": 1.0,
+          "spectral_recovery_score": 0.5053446019548525,
+          "stereo_integrity_score": 0.775,
+          "transient_quality_score": 1.0,
+          "mastering_consistency_score": 1.0,
+          "clipping_after": 0,
+          "restoration_potential": "Moderate",
+          "confidence": 0.781748976705586
+        }
+      },
+      {
+        "index": 4,
+        "name": "mastering",
+        "evaluation": {
+          "reconstruction_score": 0.9249999999999999,
+          "artifact_reduction_score": 1.0,
+          "spectral_recovery_score": 0.5056331018056364,
+          "stereo_integrity_score": 0.775,
+          "transient_quality_score": 1.0,
+          "mastering_consistency_score": 1.0,
+          "clipping_after": 0,
+          "restoration_potential": "Moderate",
+          "confidence": 0.7827775218496511
+        }
+      },
+      {
+        "index": 5,
+        "name": "perceptual_optimization",
+        "evaluation": {
+          "reconstruction_score": 0.9249999999999999,
+          "artifact_reduction_score": 1.0,
+          "spectral_recovery_score": 0.5057803220719085,
+          "stereo_integrity_score": 0.775,
+          "transient_quality_score": 1.0,
+          "mastering_consistency_score": 1.0,
+          "clipping_after": 0,
+          "restoration_potential": "Moderate",
+          "confidence": 0.7836105477731298
+        }
+      }
+    ]
+  }
+}

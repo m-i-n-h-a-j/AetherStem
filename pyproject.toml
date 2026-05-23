@@ -38,6 +38,13 @@ test = [
     "pytest",
     "pytest-cov",
 ]
+validation = [
+    "pytest",
+    "pytest-cov",
+    "ruff",
+    "mypy",
+    "pyright",
+]
 runtime-cpu = [
     "onnx",
     "onnxruntime",
@@ -65,4 +72,4 @@ runtime-dev = [
 aetherstem = "cli.main:app"
 
 [tool.setuptools.packages.find]
-include = ["ai*", "audio_io*", "cli*", "dsp*", "models*", "pipeline*", "utils*"]
+include = ["ai*", "audio_io*", "benchmarks*", "cli*", "dsp*", "models*", "pipeline*", "utils*", "validation*"]
