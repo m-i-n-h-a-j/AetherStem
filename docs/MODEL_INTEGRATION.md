@@ -1,6 +1,6 @@
 # Model Integration
 
-Models implement `ai.models.base.AudioModel`:
+v0.3 models implement `ai.models.base.AudioModel`:
 
 ```python
 class AudioModel(Protocol):
@@ -24,3 +24,18 @@ Built-in adapter families:
 - Enhancement and bandwidth extension
 - Super-resolution
 
+## v0.4 Runtime Adapters
+
+New executable integrations should implement the runtime interfaces in `ai/adapters/` instead of placing inference directly in orchestration.
+
+Rules:
+
+- adapters are inference-only;
+- no DSP analysis;
+- no export logic;
+- no file IO for user inputs or reports;
+- async load and execution methods;
+- accept `AudioBuffer` and `ExecutionContext`;
+- support progress, cancellation, chunked execution, and stream-safe processing.
+
+Separation models implement `SeparationAdapter`. The Demucs-compatible runtime adapter lives in `ai/models/demucs/runtime_adapter.py` and prefers ONNX Runtime when a model path is configured.

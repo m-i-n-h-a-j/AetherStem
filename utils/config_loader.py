@@ -26,6 +26,10 @@ class AIConfig:
     validation_thresholds: Dict[str, Any] = field(default_factory=dict)
     denoise_strength: float = 0.5
     enhancement_intensity: float = 0.5
+    provider: str = "auto"
+    precision: str = "fp32"
+    low_memory: bool = False
+    model_path: Optional[str] = None
 
 @dataclass
 class PathConfig:

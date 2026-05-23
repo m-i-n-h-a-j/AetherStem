@@ -1,6 +1,6 @@
 # AetherStem
 
-AetherStem is a professional AI-assisted music source separation platform built for Windows. It provides high-fidelity audio preprocessing and modular architecture for future AI model integration.
+AetherStem is a professional AI-assisted music source separation platform built for Windows. It provides deterministic DSP analysis, AI orchestration, and a v0.4 inference runtime for chunked separation workflows.
 
 ## Features
 
@@ -8,6 +8,10 @@ AetherStem is a professional AI-assisted music source separation platform built 
 - **High-Fidelity Preprocessing**: Converts audio to 96kHz, 32-bit float WAV using FFmpeg.
 - **Rich Metadata Inspection**: Detailed audio properties display via FFprobe and Rich tables.
 - **Modular Architecture**: Clean separation of CLI, I/O, DSP, and AI components.
+- **AI Orchestration**: DSP-driven restore, separate, denoise, enhance, preset, batch, and benchmark workflows.
+- **v0.4 Runtime Core**: Canonical audio buffers, tensor contracts, execution contexts, cancellation, progress, chunk scheduling, and streaming-compatible chunk flow.
+- **Runtime Backends**: ONNX Runtime backend with CPU/CUDA provider selection and optional PyTorch runtime fallback hooks.
+- **Demucs-Compatible Separation**: ONNX-first runtime adapter with chunk batching, overlap-add reconstruction, stereo-safe output, and automatic padding.
 - **Structured Logging**: Diagnostic tracking for all major processing stages.
 
 ## Requirements
@@ -37,6 +41,16 @@ AetherStem is a professional AI-assisted music source separation platform built 
    ```bash
    pip install -e .
    ```
+
+Optional runtime installs:
+
+```bash
+pip install -e ".[runtime-cpu]"
+pip install -e ".[runtime-cuda]"
+pip install -e ".[runtime-dev]"
+```
+
+The base install remains focused on analysis and orchestration. Install a runtime extra when you want ONNX/PyTorch model execution.
 
 ## Usage
 
@@ -78,6 +92,32 @@ aetherstem phase <path-to-audio-file>
 ```
 Specifically generates the requested plots (Spectrogram, Waveform, Vectorscope/Phase Correlation Graph) and outputs them to the `output/` directory.
 
+### AI Runtime Workflows
+```bash
+aetherstem restore <path-to-audio-file>
+aetherstem separate <path-to-audio-file>
+aetherstem denoise <path-to-audio-file>
+aetherstem enhance <path-to-audio-file>
+aetherstem preset archival_restore <path-to-audio-file>
+aetherstem batch <folder>
+aetherstem benchmark <path-to-audio-file>
+```
+
+Runtime flags are available on AI commands:
+
+```bash
+aetherstem separate song.flac --backend onnx --device cpu --chunk-size 441000 --overlap 0.25 --low-memory --benchmark-runtime
+```
+
+The Demucs-compatible runtime adapter prefers an ONNX model path when configured. Set `ai.model_path` in `configs/default.yaml` or pass it through workflow config/presets. Without a configured model file, the runtime uses a deterministic chunked projection fallback so the graph, scheduler, reconstruction, export, and diagnostics remain executable without bundled weights.
+
+### Runtime Diagnostics
+```bash
+aetherstem runtime-diagnostics
+```
+
+Prints available runtime backends, ONNX providers, Torch CUDA status, device summaries, and optional dependency availability.
+
 ## Running Tests
 
 To run the unit and integration tests:
@@ -92,6 +132,10 @@ pytest
 - `dsp/`: Core digital signal processing (loudness, spectral analysis, stereo, phase, clipping, noise floor, visualizer).
 - `pipeline/`: Orchestrates the step-based analysis workflow.
 - `models/`: Strongly typed Pydantic models (AudioMetadata, AudioAnalysis, etc.) and future AI model abstractions.
+- `ai/runtime/`: v0.4 runtime contracts for audio buffers, tensor movement, devices, memory, chunks, streaming, progress, and cancellation.
+- `ai/backends/`: Runtime backend registry and ONNX/PyTorch backend adapters.
+- `ai/adapters/`: Strict inference-only adapter interfaces.
+- `ai/models/demucs/`: Demucs-compatible runtime separation adapter and reconstruction utilities.
 - `configs/`: YAML configurations for processing.
 - `cache/`: Caching layer for analysis results.
 - `reports/`: Target output folder for JSON reports.

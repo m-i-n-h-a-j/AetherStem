@@ -7,11 +7,17 @@ from typing import Any, Callable
 import numpy as np
 import soundfile as sf
 
+from ai.adapters.separation import SeparationOptions
 from ai.compute.backend import BackendSelection, select_backend
 from ai.inference.executor import InferenceExecutor
 from ai.models.manager import ModelManager
+from ai.models.demucs.runtime_adapter import DemucsRuntimeAdapter
 from ai.orchestration.decision_engine import DecisionEngine, ProcessingPlan
 from ai.orchestration.routing import model_for_stage
+from ai.runtime.audio_buffer import AudioBuffer
+from ai.runtime.context import ExecutionContext
+from ai.runtime.executor import RuntimeExecutor
+from ai.runtime.progress import ProgressReporter
 from ai.validation.quality_comparator import QualityComparator
 from dsp.visualizer import generate_spectrogram, generate_waveform
 
@@ -30,6 +36,7 @@ class AudioGraph:
         self.decision_engine = decision_engine or DecisionEngine()
         self.output_root = Path(output_root)
         self.executor = InferenceExecutor()
+        self.runtime_executor = RuntimeExecutor()
         self.comparator = QualityComparator()
 
     def execute(
@@ -115,6 +122,8 @@ class AudioGraph:
         model_name = model_for_stage("separate", configured=config.get("models", {}))
         if model_name is None:
             return {"skipped": True, "reason": "No separation model registered."}
+        if model_name == "demucs-runtime":
+            return self._run_runtime_separation(audio, sample_rate, selection, run_dir, config)
         model = self.model_manager.get(model_name, selection)
         result = self.executor.run(
             model,
@@ -130,6 +139,49 @@ class AudioGraph:
             sf.write(path, _sf_audio(stem.audio), sample_rate)
             paths[name] = str(path)
         return {"model": result.model.name, "warnings": result.warnings, "stems": paths}
+
+    def _run_runtime_separation(
+        self,
+        audio: np.ndarray,
+        sample_rate: int,
+        selection: BackendSelection,
+        run_dir: Path,
+        config: dict[str, Any],
+    ) -> dict[str, Any]:
+        adapter = DemucsRuntimeAdapter()
+        context = ExecutionContext(
+            backend=config.get("backend", selection.backend),
+            device=config.get("device", selection.device),
+            provider=config.get("provider", "auto"),
+            precision=config.get("precision", "fp32"),
+            low_memory=bool(config.get("low_memory", False)),
+            fallback_to_cpu=bool(config.get("fallback_to_cpu", True)),
+            diagnostics={"model_path": config.get("model_path") or config.get("demucs_model_path")},
+            progress=ProgressReporter(),
+        )
+        options = SeparationOptions(
+            stems=["vocals", "drums", "bass", "other"],
+            chunk_size=int(config.get("chunk_size", 44100 * 10)),
+            overlap=float(config.get("overlap", config.get("overlap_ratio", 0.25))),
+            model_path=config.get("model_path") or config.get("demucs_model_path"),
+        )
+        buffer = AudioBuffer(samples=audio, sample_rate=sample_rate, layout=_audio_layout(audio))
+        self.runtime_executor.run(adapter.load(context))
+        result = self.runtime_executor.run(adapter.separate(buffer, context, options))
+        stems_dir = run_dir / "stems"
+        stems_dir.mkdir(parents=True, exist_ok=True)
+        paths = {}
+        for name, stem in result.stems.items():
+            path = stems_dir / f"{name}.wav"
+            sf.write(path, _sf_audio(stem.audio.samples), stem.audio.sample_rate)
+            paths[name] = str(path)
+        return {
+            "model": result.metadata.name,
+            "runtime": "v0.4",
+            "warnings": result.warnings,
+            "diagnostics": result.diagnostics,
+            "stems": paths,
+        }
 
     def _export_audio(self, audio: np.ndarray, sample_rate: int, run_dir: Path, workflow: str, accepted: bool) -> dict[str, str]:
         target_dir = run_dir if accepted else run_dir / "rejected"
@@ -152,3 +204,9 @@ def _sf_audio(audio: np.ndarray) -> np.ndarray:
     if audio.ndim == 2 and audio.shape[0] <= 8:
         return audio.T
     return audio
+
+
+def _audio_layout(audio: np.ndarray) -> str:
+    if audio.ndim == 1:
+        return "mono"
+    return "channels_first" if audio.shape[0] <= 8 else "channels_last"

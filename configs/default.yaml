@@ -19,7 +19,7 @@ pipeline:
 # AI Restoration Settings
 ai:
   models:
-    separate: "demucs-placeholder"
+    separate: "demucs-runtime"
     denoise: "denoise-placeholder"
     declip: "denoise-placeholder"
     enhance: "enhancement-placeholder"
@@ -29,6 +29,10 @@ ai:
     artifact_threshold: 0.75
   denoise_strength: 0.5
   enhancement_intensity: 0.5
+  provider: "auto"
+  precision: "fp32"
+  low_memory: false
+  model_path: null
 
 # Path Settings
 paths:
@@ -41,4 +45,4 @@ paths:
 # Metadata
 metadata:
   app_name: "AetherStem"
-  version: "0.3.0"
+  version: "0.4.0"

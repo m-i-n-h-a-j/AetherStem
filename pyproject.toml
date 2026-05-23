@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aetherstem"
-version = "0.3.0"
+version = "0.4.0"
 description = "AI-assisted music source separation platform"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -31,20 +31,34 @@ dependencies = [
     "matplotlib",
     "pillow",
     "pydantic>=2.0",
-    "torch",
-    "torchaudio",
-    "onnx",
-    "onnxruntime",
-    "huggingface_hub",
-    "einops",
-    "accelerate",
-    "safetensors",
 ]
 
 [project.optional-dependencies]
 test = [
     "pytest",
     "pytest-cov",
+]
+runtime-cpu = [
+    "onnx",
+    "onnxruntime",
+    "huggingface_hub",
+    "einops",
+    "safetensors",
+]
+runtime-cuda = [
+    "onnx",
+    "onnxruntime-gpu",
+    "torch",
+    "torchaudio",
+    "accelerate",
+    "einops",
+    "safetensors",
+]
+runtime-dev = [
+    "pytest",
+    "pytest-cov",
+    "onnx",
+    "onnxruntime",
 ]
 
 [project.scripts]

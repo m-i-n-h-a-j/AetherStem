@@ -5,10 +5,12 @@ from rich.table import Table
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from typing import Optional
 
+from ai.backends.registry import default_backend_registry
 from ai.batch import BatchState, scan_audio_files
 from ai.orchestration.decision_engine import DecisionEngine
 from ai.orchestration.graph import AudioGraph
 from ai.orchestration.presets import PresetLoader
+from ai.runtime.device_manager import DeviceManager
 from benchmarks.runner import BenchmarkRunner
 from utils.config_loader import config
 from utils.logger import logger
@@ -28,6 +30,12 @@ def _ai_config(extra: dict | None = None) -> dict:
         "device": config.pipeline.device,
         "chunk_size": config.pipeline.chunk_size,
         "overlap_ratio": config.pipeline.overlap_ratio,
+        "overlap": config.pipeline.overlap_ratio,
+        "provider": config.ai.provider,
+        "precision": config.ai.precision,
+        "low_memory": config.ai.low_memory,
+        "model_path": config.ai.model_path,
+        "fallback_to_cpu": config.pipeline.fallback_to_cpu,
         "denoise_strength": config.ai.denoise_strength,
         "enhancement_intensity": config.ai.enhancement_intensity,
         "models": config.ai.models,
@@ -43,6 +51,8 @@ def _run_ai_workflow(
     output_dir: Optional[Path] = None,
     thresholds: dict | None = None,
     workflow_config: dict | None = None,
+    runtime_overrides: dict | None = None,
+    benchmark_runtime: bool = False,
 ):
     if not input_path.exists():
         console.print(f"[red]Error:[/red] File not found: {input_path}")
@@ -63,22 +73,30 @@ def _run_ai_workflow(
             signal, sample_rate = PreprocessStage().execute(input_path)
             engine = DecisionEngine({**config.ai.validation_thresholds, **(thresholds or {})})
             graph = AudioGraph(decision_engine=engine, output_root=output_dir or Path(config.paths.exports_dir))
-            graph_config = _ai_config(workflow_config)
+            graph_config = _ai_config({**(workflow_config or {}), **(runtime_overrides or {})})
 
             def on_progress(stage: str, status: str) -> None:
                 progress.update(task, description=f"{workflow}: {stage} {status}")
 
-            result = graph.execute(
-                signal,
-                sample_rate,
-                analysis_result.analysis,
-                analysis_result.quality,
-                workflow=workflow,
-                input_path=input_path,
-                force=force,
-                config=graph_config,
-                progress=on_progress,
-            )
+            def execute_graph():
+                return graph.execute(
+                    signal,
+                    sample_rate,
+                    analysis_result.analysis,
+                    analysis_result.quality,
+                    workflow=workflow,
+                    input_path=input_path,
+                    force=force,
+                    config=graph_config,
+                    progress=on_progress,
+                )
+
+            if benchmark_runtime:
+                report = BenchmarkRunner(Path(config.paths.benchmarks_dir)).run(input_path, execute_graph)
+                result = report["result"]
+                result["runtime_benchmark"] = report["report"]
+            else:
+                result = execute_graph()
         console.print(f"[bold green]{workflow.capitalize()} complete:[/bold green] {result['run_dir']}")
         console.print(f"Manifest: [cyan]{result['manifest']}[/cyan]")
         return result
@@ -206,33 +224,69 @@ def phase(input_path: Path):
 def restore(
     input_path: Path,
     output_dir: Optional[Path] = typer.Option(None, "--output", "-o", help="Export directory."),
+    backend: Optional[str] = typer.Option(None, "--backend", help="Runtime backend: auto, onnx, or torch."),
+    device: Optional[str] = typer.Option(None, "--device", help="Runtime device: auto, cpu, or cuda."),
+    chunk_size: Optional[int] = typer.Option(None, "--chunk-size", help="Runtime chunk size in samples."),
+    overlap: Optional[float] = typer.Option(None, "--overlap", help="Chunk overlap ratio."),
+    low_memory: bool = typer.Option(False, "--low-memory", help="Use sequential low-memory runtime scheduling."),
+    benchmark_runtime: bool = typer.Option(False, "--benchmark-runtime", help="Write runtime benchmark report."),
 ):
     """Runs analysis-driven restoration and writes restored audio plus reports."""
-    _run_ai_workflow("restore", input_path, output_dir=output_dir)
+    _run_ai_workflow("restore", input_path, output_dir=output_dir, runtime_overrides=_runtime_overrides(backend, device, chunk_size, overlap, low_memory), benchmark_runtime=benchmark_runtime)
 
 @app.command()
 def separate(
     input_path: Path,
     output_dir: Optional[Path] = typer.Option(None, "--output", "-o", help="Export directory."),
+    backend: Optional[str] = typer.Option(None, "--backend", help="Runtime backend: auto, onnx, or torch."),
+    device: Optional[str] = typer.Option(None, "--device", help="Runtime device: auto, cpu, or cuda."),
+    chunk_size: Optional[int] = typer.Option(None, "--chunk-size", help="Runtime chunk size in samples."),
+    overlap: Optional[float] = typer.Option(None, "--overlap", help="Chunk overlap ratio."),
+    low_memory: bool = typer.Option(False, "--low-memory", help="Use sequential low-memory runtime scheduling."),
+    benchmark_runtime: bool = typer.Option(False, "--benchmark-runtime", help="Write runtime benchmark report."),
 ):
     """Generates vocals, drums, bass, and other stems."""
-    _run_ai_workflow("separate", input_path, force=["separate"], output_dir=output_dir)
+    _run_ai_workflow("separate", input_path, force=["separate"], output_dir=output_dir, runtime_overrides=_runtime_overrides(backend, device, chunk_size, overlap, low_memory), benchmark_runtime=benchmark_runtime)
 
 @app.command()
 def denoise(
     input_path: Path,
     output_dir: Optional[Path] = typer.Option(None, "--output", "-o", help="Export directory."),
+    backend: Optional[str] = typer.Option(None, "--backend", help="Runtime backend: auto, onnx, or torch."),
+    device: Optional[str] = typer.Option(None, "--device", help="Runtime device: auto, cpu, or cuda."),
+    chunk_size: Optional[int] = typer.Option(None, "--chunk-size", help="Runtime chunk size in samples."),
+    overlap: Optional[float] = typer.Option(None, "--overlap", help="Chunk overlap ratio."),
+    low_memory: bool = typer.Option(False, "--low-memory", help="Use sequential low-memory runtime scheduling."),
+    benchmark_runtime: bool = typer.Option(False, "--benchmark-runtime", help="Write runtime benchmark report."),
 ):
     """Performs configurable broadband denoising with validation."""
-    _run_ai_workflow("denoise", input_path, force=["denoise"], output_dir=output_dir)
+    _run_ai_workflow("denoise", input_path, force=["denoise"], output_dir=output_dir, runtime_overrides=_runtime_overrides(backend, device, chunk_size, overlap, low_memory), benchmark_runtime=benchmark_runtime)
 
 @app.command()
 def enhance(
     input_path: Path,
     output_dir: Optional[Path] = typer.Option(None, "--output", "-o", help="Export directory."),
+    backend: Optional[str] = typer.Option(None, "--backend", help="Runtime backend: auto, onnx, or torch."),
+    device: Optional[str] = typer.Option(None, "--device", help="Runtime device: auto, cpu, or cuda."),
+    chunk_size: Optional[int] = typer.Option(None, "--chunk-size", help="Runtime chunk size in samples."),
+    overlap: Optional[float] = typer.Option(None, "--overlap", help="Chunk overlap ratio."),
+    low_memory: bool = typer.Option(False, "--low-memory", help="Use sequential low-memory runtime scheduling."),
+    benchmark_runtime: bool = typer.Option(False, "--benchmark-runtime", help="Write runtime benchmark report."),
 ):
     """Runs validation-aware enhancement when analysis warrants it."""
-    _run_ai_workflow("enhance", input_path, force=["enhance"], output_dir=output_dir)
+    _run_ai_workflow("enhance", input_path, force=["enhance"], output_dir=output_dir, runtime_overrides=_runtime_overrides(backend, device, chunk_size, overlap, low_memory), benchmark_runtime=benchmark_runtime)
+
+@app.command("runtime-diagnostics")
+def runtime_diagnostics():
+    """Reports runtime backend, provider, device, and optional dependency status."""
+    table = Table(title="Runtime Diagnostics")
+    table.add_column("Component", style="cyan")
+    table.add_column("Status", style="magenta")
+    for name, diagnostics in default_backend_registry.diagnostics().items():
+        table.add_row(f"backend:{name}", str(diagnostics))
+    for device in DeviceManager().devices():
+        table.add_row(f"device:{device.name}", str({"available": device.available, "memory_total_mb": device.memory_total_mb, "diagnostics": device.diagnostics or {}}))
+    console.print(table)
 
 @app.command("preset")
 def run_preset(
@@ -286,6 +340,27 @@ def benchmark(
     runner = BenchmarkRunner(output_dir or Path(config.paths.benchmarks_dir))
     report = runner.run(input_path, lambda: _run_ai_workflow("restore", input_path))
     console.print(f"[bold green]Benchmark complete:[/bold green] {report['report']}")
+
+def _runtime_overrides(
+    backend: str | None,
+    device: str | None,
+    chunk_size: int | None,
+    overlap: float | None,
+    low_memory: bool,
+) -> dict:
+    values = {}
+    if backend:
+        values["backend"] = backend
+    if device:
+        values["device"] = device
+    if chunk_size:
+        values["chunk_size"] = chunk_size
+    if overlap is not None:
+        values["overlap"] = overlap
+        values["overlap_ratio"] = overlap
+    if low_memory:
+        values["low_memory"] = True
+    return values
 
 def _display_analysis_result(result):
     """Helper to display PipelineResult in a rich format."""
