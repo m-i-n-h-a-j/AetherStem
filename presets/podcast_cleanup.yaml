@@ -1,0 +1,8 @@
+workflow: restore
+force:
+  - denoise
+thresholds:
+  noise_floor_db: -70.0
+config:
+  denoise_strength: 0.6
+

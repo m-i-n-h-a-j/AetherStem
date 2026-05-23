@@ -1,0 +1,8 @@
+workflow: enhance
+force:
+  - enhance
+thresholds:
+  lossy_confidence: 0.4
+config:
+  enhancement_intensity: 0.7
+

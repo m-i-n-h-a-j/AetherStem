@@ -16,17 +16,30 @@ class PipelineConfig:
     chunk_size: int
     overlap_ratio: float
     hop_length: int
+    backend: str = "auto"
+    device: str = "auto"
+    fallback_to_cpu: bool = True
+
+@dataclass
+class AIConfig:
+    models: Dict[str, str] = field(default_factory=dict)
+    validation_thresholds: Dict[str, Any] = field(default_factory=dict)
+    denoise_strength: float = 0.5
+    enhancement_intensity: float = 0.5
 
 @dataclass
 class PathConfig:
     temp_dir: str
     output_dir: str
     logs_dir: str
+    exports_dir: str = "exports"
+    benchmarks_dir: str = "benchmarks"
 
 @dataclass
 class AppConfig:
     audio: AudioConfig
     pipeline: PipelineConfig
+    ai: AIConfig
     paths: PathConfig
     metadata: Dict[str, Any]
 
@@ -52,6 +65,7 @@ def load_config(config_path: Optional[Path] = None) -> AppConfig:
     try:
         audio = AudioConfig(**data["audio"])
         pipeline = PipelineConfig(**data["pipeline"])
+        ai = AIConfig(**data.get("ai", {}))
         paths = PathConfig(**data["paths"])
         metadata = data["metadata"]
 
@@ -64,6 +78,7 @@ def load_config(config_path: Optional[Path] = None) -> AppConfig:
         config = AppConfig(
             audio=audio,
             pipeline=pipeline,
+            ai=ai,
             paths=paths,
             metadata=metadata
         )

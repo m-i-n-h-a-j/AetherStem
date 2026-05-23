@@ -12,14 +12,33 @@ pipeline:
   chunk_size: 4096            # Number of samples per chunk
   overlap_ratio: 0.25         # Overlap ratio between chunks
   hop_length: 1024            # Calculated as chunk_size * (1 - overlap_ratio)
+  backend: "auto"
+  device: "auto"
+  fallback_to_cpu: true
+
+# AI Restoration Settings
+ai:
+  models:
+    separate: "demucs-placeholder"
+    denoise: "denoise-placeholder"
+    declip: "denoise-placeholder"
+    enhance: "enhancement-placeholder"
+  validation_thresholds:
+    noise_floor_db: -55.0
+    lossy_confidence: 0.65
+    artifact_threshold: 0.75
+  denoise_strength: 0.5
+  enhancement_intensity: 0.5
 
 # Path Settings
 paths:
   temp_dir: "temp"
   output_dir: "output"
   logs_dir: "logs"
+  exports_dir: "exports"
+  benchmarks_dir: "benchmarks"
 
 # Metadata
 metadata:
   app_name: "AetherStem"
-  version: "0.2.0"
+  version: "0.3.0"

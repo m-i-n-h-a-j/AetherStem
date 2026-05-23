@@ -1,0 +1,8 @@
+workflow: restore
+force:
+  - denoise
+config:
+  denoise_strength: 0.8
+  models:
+    separate: demucs-placeholder
+

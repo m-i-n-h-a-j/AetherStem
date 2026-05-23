@@ -1,0 +1,6 @@
+workflow: enhance
+force:
+  - enhance
+config:
+  enhancement_intensity: 0.35
+

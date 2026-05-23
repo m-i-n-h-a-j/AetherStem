@@ -5,16 +5,86 @@ from rich.table import Table
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from typing import Optional
 
+from ai.batch import BatchState, scan_audio_files
+from ai.orchestration.decision_engine import DecisionEngine
+from ai.orchestration.graph import AudioGraph
+from ai.orchestration.presets import PresetLoader
+from benchmarks.runner import BenchmarkRunner
 from utils.config_loader import config
 from utils.logger import logger
 from audio_io.audio_inspector import inspect_audio, validate_input
 from audio_io.audio_converter import convert_to_wav, check_ffmpeg
+from pipeline.stages.preprocess import PreprocessStage
 from pipeline.runner import PipelineRunner
 from utils.cache import AnalysisCache
 
 app = typer.Typer(help="AetherStem: Professional-grade audio analysis and DSP intelligence pipeline.")
 console = Console()
 cache = AnalysisCache()
+
+def _ai_config(extra: dict | None = None) -> dict:
+    base = {
+        "backend": config.pipeline.backend,
+        "device": config.pipeline.device,
+        "chunk_size": config.pipeline.chunk_size,
+        "overlap_ratio": config.pipeline.overlap_ratio,
+        "denoise_strength": config.ai.denoise_strength,
+        "enhancement_intensity": config.ai.enhancement_intensity,
+        "models": config.ai.models,
+    }
+    if extra:
+        base.update(extra)
+    return base
+
+def _run_ai_workflow(
+    workflow: str,
+    input_path: Path,
+    force: list[str] | None = None,
+    output_dir: Optional[Path] = None,
+    thresholds: dict | None = None,
+    workflow_config: dict | None = None,
+):
+    if not input_path.exists():
+        console.print(f"[red]Error:[/red] File not found: {input_path}")
+        raise typer.Exit(code=1)
+
+    try:
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            transient=True,
+        ) as progress:
+            task = progress.add_task(description=f"Analyzing {input_path.name}...", total=None)
+            analysis_result = PipelineRunner(output_dir=output_dir).run(input_path)
+            if not analysis_result.success:
+                raise RuntimeError(analysis_result.error or "Analysis failed")
+
+            progress.update(task, description=f"Preparing {workflow} graph...")
+            signal, sample_rate = PreprocessStage().execute(input_path)
+            engine = DecisionEngine({**config.ai.validation_thresholds, **(thresholds or {})})
+            graph = AudioGraph(decision_engine=engine, output_root=output_dir or Path(config.paths.exports_dir))
+            graph_config = _ai_config(workflow_config)
+
+            def on_progress(stage: str, status: str) -> None:
+                progress.update(task, description=f"{workflow}: {stage} {status}")
+
+            result = graph.execute(
+                signal,
+                sample_rate,
+                analysis_result.analysis,
+                analysis_result.quality,
+                workflow=workflow,
+                input_path=input_path,
+                force=force,
+                config=graph_config,
+                progress=on_progress,
+            )
+        console.print(f"[bold green]{workflow.capitalize()} complete:[/bold green] {result['run_dir']}")
+        console.print(f"Manifest: [cyan]{result['manifest']}[/cyan]")
+        return result
+    except Exception as e:
+        console.print(f"[red]{workflow.capitalize()} failed:[/red] {e}")
+        raise typer.Exit(code=1)
 
 @app.command()
 def version():
@@ -131,6 +201,91 @@ def waveform(input_path: Path, output_dir: Optional[Path] = typer.Option(None, "
 def phase(input_path: Path):
     """Performs stereo and phase analysis."""
     analyze(input_path, use_cache=True)
+
+@app.command()
+def restore(
+    input_path: Path,
+    output_dir: Optional[Path] = typer.Option(None, "--output", "-o", help="Export directory."),
+):
+    """Runs analysis-driven restoration and writes restored audio plus reports."""
+    _run_ai_workflow("restore", input_path, output_dir=output_dir)
+
+@app.command()
+def separate(
+    input_path: Path,
+    output_dir: Optional[Path] = typer.Option(None, "--output", "-o", help="Export directory."),
+):
+    """Generates vocals, drums, bass, and other stems."""
+    _run_ai_workflow("separate", input_path, force=["separate"], output_dir=output_dir)
+
+@app.command()
+def denoise(
+    input_path: Path,
+    output_dir: Optional[Path] = typer.Option(None, "--output", "-o", help="Export directory."),
+):
+    """Performs configurable broadband denoising with validation."""
+    _run_ai_workflow("denoise", input_path, force=["denoise"], output_dir=output_dir)
+
+@app.command()
+def enhance(
+    input_path: Path,
+    output_dir: Optional[Path] = typer.Option(None, "--output", "-o", help="Export directory."),
+):
+    """Runs validation-aware enhancement when analysis warrants it."""
+    _run_ai_workflow("enhance", input_path, force=["enhance"], output_dir=output_dir)
+
+@app.command("preset")
+def run_preset(
+    preset_name: str,
+    input_path: Path,
+    output_dir: Optional[Path] = typer.Option(None, "--output", "-o", help="Export directory."),
+):
+    """Runs a YAML-defined restoration workflow."""
+    try:
+        preset = PresetLoader().load(preset_name)
+    except Exception as e:
+        console.print(f"[red]Preset failed:[/red] {e}")
+        raise typer.Exit(code=1)
+    _run_ai_workflow(
+        preset.workflow,
+        input_path,
+        force=preset.force,
+        output_dir=output_dir,
+        thresholds=preset.thresholds,
+        workflow_config=preset.config,
+    )
+
+@app.command()
+def batch(
+    folder: Path,
+    output_dir: Optional[Path] = typer.Option(None, "--output", "-o", help="Export directory."),
+    force: bool = typer.Option(False, "--force", help="Reprocess files already marked complete."),
+):
+    """Recursively restores supported audio files with isolated per-file results."""
+    if not folder.exists() or not folder.is_dir():
+        console.print(f"[red]Error:[/red] Folder not found: {folder}")
+        raise typer.Exit(code=1)
+    export_root = output_dir or Path(config.paths.exports_dir)
+    state = BatchState(export_root / "batch_state.json")
+    files = state.pending(scan_audio_files(folder), force=force)
+    console.print(f"Queued {len(files)} file(s).")
+    for audio_file in files:
+        try:
+            _run_ai_workflow("restore", audio_file, output_dir=export_root)
+            state.mark_completed(audio_file)
+        except typer.Exit:
+            state.mark_failed(audio_file, "Workflow failed")
+    console.print(f"[bold green]Batch complete.[/bold green] State: {state.path}")
+
+@app.command()
+def benchmark(
+    input_path: Path,
+    output_dir: Optional[Path] = typer.Option(None, "--output", "-o", help="Benchmark report directory."),
+):
+    """Measures workflow runtime and writes a structured benchmark report."""
+    runner = BenchmarkRunner(output_dir or Path(config.paths.benchmarks_dir))
+    report = runner.run(input_path, lambda: _run_ai_workflow("restore", input_path))
+    console.print(f"[bold green]Benchmark complete:[/bold green] {report['report']}")
 
 def _display_analysis_result(result):
     """Helper to display PipelineResult in a rich format."""
