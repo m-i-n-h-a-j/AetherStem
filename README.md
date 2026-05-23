@@ -14,6 +14,7 @@ AetherStem is a professional AI-assisted music source separation platform built 
 - **Runtime Backends**: ONNX Runtime backend with CPU/CUDA provider selection and optional PyTorch runtime fallback hooks.
 - **Demucs-Compatible Separation**: ONNX-first runtime adapter with chunk batching, overlap-add reconstruction, stereo-safe output, and automatic padding.
 - **CLI Help and AI Guidance**: Contextual help, workflow guidance, troubleshooting, config introspection, and AI-readable command metadata.
+- **v0.6 Reconstruction Engine**: Offline-quality forensic analysis, adaptive reconstruction graphs, harmonic regeneration, spectral repair, bandwidth extension, transient/stereo recovery, mastering, evaluation, and float-safe high-resolution rendering.
 - **Structured Logging**: Diagnostic tracking for all major processing stages.
 
 ## Requirements
@@ -134,6 +135,17 @@ aetherstem ai-metadata
 
 `ai-metadata` emits deterministic JSON for external AI agents and tool runners. It includes commands, examples, workflows, diagnostics guidance, and project conventions without terminal markup.
 
+### Ultra-Quality Reconstruction
+```bash
+aetherstem forensic song.mp3
+aetherstem reconstruct song.mp3 --profile extreme --target-rate 192000 --multi-pass --bandwidth-extension
+aetherstem remaster mix.flac --mastering-profile studio
+aetherstem archival tape.wav --target-rate 192000
+aetherstem upscale song.flac --target-rate 192000
+```
+
+AetherStem does not claim true lossless recovery from lossy sources. Reconstruction workflows produce plausibly reconstructed high-resolution masters with confidence, uncertainty, stage diagnostics, and evaluation reports.
+
 ### Model Registry and Runtime Profiles
 
 v0.5 discovers local model manifests from `ai/models/registry/manifests/` by default and reports cache state without loading model weights. Configure runtime model assets in YAML manifests or through `ai.model_path`.
@@ -170,6 +182,7 @@ pytest
 - `ai/optimization/`: Precision policy, quantization metadata, calibration hooks, and runtime profile selection.
 - `ai/telemetry/`: Runtime events, tracing, profiling, and JSON report helpers.
 - `cli/help/`: Contextual help, AI metadata, workflow guidance, troubleshooting, and rendering.
+- `ai/reconstruction/`: v0.6 forensic analysis, adaptive reconstruction graph, restoration stages, evaluation, rendering, and diagnostics.
 - `configs/`: YAML configurations for processing.
 - `cache/`: Caching layer for analysis results.
 - `reports/`: Target output folder for JSON reports.

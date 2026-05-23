@@ -41,6 +41,9 @@ class HelpRegistry:
             "benchmark": "benchmark",
             "restore": "restore",
             "separate": "separate",
+            "reconstruction": "reconstruct",
+            "forensics": "forensic",
+            "archival": "archival",
         }
 
     def all(self) -> list[CommandHelp]:
@@ -127,5 +130,52 @@ default_help_registry = HelpRegistry([
         examples=["aetherstem config-info ai", "aetherstem config-info --json"],
         related=["runtime-diagnostics", "help runtime"],
     ),
+    CommandHelp(
+        name="forensic",
+        category="reconstruction",
+        summary="Generate deterministic forensic source and artifact reports.",
+        usage="aetherstem forensic INPUT [--output DIR]",
+        description="Analyzes likely source type, codec artifacts, spectral ceiling, transient smear, stereo collapse, clipping, feasibility, confidence, and uncertainty.",
+        examples=["aetherstem forensic song.mp3"],
+        related=["reconstruct", "archival"],
+        agent_notes=["Does not claim true lossless recovery from lossy sources."],
+    ),
+    CommandHelp(
+        name="reconstruct",
+        category="reconstruction",
+        summary="Run offline high-quality reconstruction and remastering.",
+        usage="aetherstem reconstruct INPUT --profile extreme --target-rate 192000 --multi-pass",
+        description="Runs forensic analysis, adaptive reconstruction graph generation, reconstruction stages, evaluation, and float-safe high-resolution rendering.",
+        options=["--profile", "--target-rate", "--output-format", "--multi-pass", "--harmonic-reconstruction", "--bandwidth-extension"],
+        examples=["aetherstem reconstruct song.mp3 --profile extreme --target-rate 192000 --multi-pass --bandwidth-extension"],
+        related=["forensic", "remaster", "archival", "upscale"],
+        troubleshooting=["Use forensic first to inspect feasibility and uncertainty."],
+    ),
+    CommandHelp(
+        name="remaster",
+        category="reconstruction",
+        summary="Run reconstruction-oriented remastering.",
+        usage="aetherstem remaster INPUT [--mastering-profile studio]",
+        description="Applies reconstruction graph stages with mastering profile controls.",
+        examples=["aetherstem remaster mix.flac --mastering-profile studio"],
+        related=["reconstruct", "archival"],
+    ),
+    CommandHelp(
+        name="archival",
+        category="reconstruction",
+        summary="Run conservative archival reconstruction and high-resolution rendering.",
+        usage="aetherstem archival INPUT --target-rate 192000",
+        description="Uses archival reconstruction and mastering profiles with multi-pass refinement.",
+        examples=["aetherstem archival tape.wav --target-rate 192000"],
+        related=["forensic", "reconstruct"],
+    ),
+    CommandHelp(
+        name="upscale",
+        category="reconstruction",
+        summary="Run bandwidth-focused high-resolution reconstruction.",
+        usage="aetherstem upscale INPUT --target-rate 192000",
+        description="Focuses on bandwidth extension, harmonic reconstruction, spectral repair, and high-resolution rendering.",
+        examples=["aetherstem upscale song.flac --target-rate 192000"],
+        related=["reconstruct", "forensic"],
+    ),
 ])
-

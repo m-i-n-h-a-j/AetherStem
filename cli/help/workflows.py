@@ -23,10 +23,22 @@ def workflow_metadata() -> list[dict]:
             "intent": "Diagnose optional runtime/backend/model setup.",
             "commands": ["aetherstem runtime-diagnostics", "aetherstem model-registry", "aetherstem config-info ai"],
         },
+        {
+            "name": "reconstruct_master",
+            "intent": "Create a plausibly reconstructed high-resolution master.",
+            "commands": [
+                "aetherstem forensic INPUT",
+                "aetherstem reconstruct INPUT --profile extreme --target-rate 192000 --multi-pass --bandwidth-extension",
+            ],
+        },
+        {
+            "name": "archival_restore",
+            "intent": "Run conservative archival reconstruction and render.",
+            "commands": ["aetherstem archival INPUT --target-rate 192000"],
+        },
     ]
 
 
 def workflow_for(topic: str) -> list[dict]:
     topic = topic.lower()
     return [item for item in workflow_metadata() if topic in item["name"] or topic in item["intent"].lower()]
-

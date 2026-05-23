@@ -15,6 +15,13 @@ from ai.optimization.runtime_profiles import RuntimeProfileSelector
 from ai.orchestration.decision_engine import DecisionEngine
 from ai.orchestration.graph import AudioGraph
 from ai.orchestration.presets import PresetLoader
+from ai.reconstruction.analysis.forensic import ForensicAnalyzer
+from ai.reconstruction.core import MasteringProfile, ReconstructionContext, ReconstructionProfile
+from ai.reconstruction.diagnostics.reports import write_reconstruction_report
+from ai.reconstruction.pipelines.multipass import MultiPassPipeline
+from ai.reconstruction.pipelines.pipeline import ReconstructionPipeline
+from ai.reconstruction.rendering.renderer import UltraQualityRenderer
+from ai.runtime.audio_buffer import AudioBuffer
 from ai.runtime.device_manager import DeviceManager
 from benchmarks.runner import BenchmarkRunner
 from cli.help.diagnostics import troubleshooting_report
@@ -475,6 +482,69 @@ def benchmark(
     report = runner.run(input_path, lambda: _run_ai_workflow("restore", input_path))
     console.print(f"[bold green]Benchmark complete:[/bold green] {report['report']}")
 
+@app.command()
+def forensic(
+    input_path: Path,
+    output_dir: Optional[Path] = typer.Option(None, "--output", "-o", help="Report directory."),
+):
+    """Runs deterministic forensic source and artifact analysis."""
+    if not input_path.exists():
+        console.print(f"[red]Error:[/red] File not found: {input_path}")
+        raise typer.Exit(code=1)
+    signal, sample_rate = PreprocessStage().execute(input_path)
+    report = ForensicAnalyzer().analyze(AudioBuffer(samples=signal, sample_rate=sample_rate, layout=_audio_layout(signal)))
+    out_dir = output_dir or Path(config.paths.exports_dir) / f"{input_path.stem}_forensic"
+    report_path = write_reconstruction_report(out_dir / "forensic_report.json", report.to_dict())
+    console.print(f"[bold green]Forensic report:[/bold green] {report_path}")
+    console.print(f"Likely source: [cyan]{report.source.likely_source}[/cyan]")
+    console.print(f"Restoration potential: [cyan]{report.feasibility.potential}[/cyan] ({report.confidence.confidence:.0%} confidence)")
+
+@app.command()
+def reconstruct(
+    input_path: Path,
+    output_dir: Optional[Path] = typer.Option(None, "--output", "-o", help="Export directory."),
+    profile: ReconstructionProfile = typer.Option(ReconstructionProfile.BALANCED, "--profile", help="fast, balanced, extreme, archival, experimental."),
+    target_rate: int = typer.Option(192000, "--target-rate", help="Target render sample rate."),
+    output_format: str = typer.Option("wav", "--output-format", help="wav or flac."),
+    multi_pass: bool = typer.Option(False, "--multi-pass", help="Enable reproducible multi-pass refinement."),
+    harmonic_reconstruction: bool = typer.Option(False, "--harmonic-reconstruction", help="Force harmonic reconstruction intent."),
+    bandwidth_extension: bool = typer.Option(False, "--bandwidth-extension", help="Force bandwidth extension intent."),
+):
+    """Runs offline reconstruction and high-resolution rendering."""
+    _run_reconstruction_workflow("reconstruct", input_path, output_dir, profile, MasteringProfile.HIFI, target_rate, output_format, multi_pass, harmonic_reconstruction, bandwidth_extension)
+
+@app.command()
+def remaster(
+    input_path: Path,
+    output_dir: Optional[Path] = typer.Option(None, "--output", "-o", help="Export directory."),
+    profile: ReconstructionProfile = typer.Option(ReconstructionProfile.BALANCED, "--profile"),
+    mastering_profile: MasteringProfile = typer.Option(MasteringProfile.STUDIO, "--mastering-profile"),
+    target_rate: int = typer.Option(96000, "--target-rate"),
+    output_format: str = typer.Option("wav", "--output-format"),
+):
+    """Runs reconstruction-oriented remastering."""
+    _run_reconstruction_workflow("remaster", input_path, output_dir, profile, mastering_profile, target_rate, output_format, False, False, False)
+
+@app.command()
+def archival(
+    input_path: Path,
+    output_dir: Optional[Path] = typer.Option(None, "--output", "-o", help="Export directory."),
+    target_rate: int = typer.Option(192000, "--target-rate"),
+    output_format: str = typer.Option("wav", "--output-format"),
+):
+    """Runs conservative archival reconstruction and high-resolution rendering."""
+    _run_reconstruction_workflow("archival", input_path, output_dir, ReconstructionProfile.ARCHIVAL, MasteringProfile.ARCHIVAL, target_rate, output_format, True, True, True)
+
+@app.command()
+def upscale(
+    input_path: Path,
+    output_dir: Optional[Path] = typer.Option(None, "--output", "-o", help="Export directory."),
+    target_rate: int = typer.Option(192000, "--target-rate"),
+    output_format: str = typer.Option("wav", "--output-format"),
+):
+    """Runs bandwidth-focused high-resolution reconstruction."""
+    _run_reconstruction_workflow("upscale", input_path, output_dir, ReconstructionProfile.EXTREME, MasteringProfile.HIFI, target_rate, output_format, False, True, True)
+
 def _runtime_overrides(
     backend: str | None,
     device: str | None,
@@ -504,6 +574,61 @@ def _config_dict() -> dict:
         "paths": vars(config.paths),
         "metadata": config.metadata,
     }
+
+def _run_reconstruction_workflow(
+    workflow: str,
+    input_path: Path,
+    output_dir: Optional[Path],
+    profile: ReconstructionProfile,
+    mastering_profile: MasteringProfile,
+    target_rate: int,
+    output_format: str,
+    multi_pass: bool,
+    harmonic_reconstruction: bool,
+    bandwidth_extension: bool,
+):
+    if not input_path.exists():
+        console.print(f"[red]Error:[/red] File not found: {input_path}")
+        raise typer.Exit(code=1)
+    try:
+        signal, sample_rate = PreprocessStage().execute(input_path)
+        out_dir = output_dir or Path(config.paths.exports_dir) / f"{input_path.stem}_{workflow}"
+        context = ReconstructionContext(
+            profile=profile,
+            mastering_profile=mastering_profile,
+            target_rate=target_rate,
+            output_format=output_format,
+            multi_pass=multi_pass,
+            harmonic_reconstruction=harmonic_reconstruction,
+            bandwidth_extension=bandwidth_extension,
+            output_dir=out_dir,
+        )
+        audio = AudioBuffer(samples=signal, sample_rate=sample_rate, layout=_audio_layout(signal))
+        pipeline = MultiPassPipeline() if multi_pass else ReconstructionPipeline()
+        result = pipeline.run(audio, context)
+        render_path = UltraQualityRenderer().render(result.audio, out_dir / workflow, target_rate, output_format)
+        report_path = write_reconstruction_report(
+            out_dir / "reconstruction_report.json",
+            {
+                "workflow": workflow,
+                "render": str(render_path),
+                "source_report": result.source_report,
+                "stage_diagnostics": result.stage_diagnostics,
+                "evaluation": result.evaluation,
+                "telemetry": result.telemetry,
+                "profile": result.profile,
+            },
+        )
+        console.print(f"[bold green]{workflow.capitalize()} complete:[/bold green] {render_path}")
+        console.print(f"Report: [cyan]{report_path}[/cyan]")
+    except Exception as e:
+        console.print(f"[red]{workflow.capitalize()} failed:[/red] {e}")
+        raise typer.Exit(code=1)
+
+def _audio_layout(audio) -> str:
+    if getattr(audio, "ndim", 1) == 1:
+        return "mono"
+    return "channels_first" if audio.shape[0] <= 8 else "channels_last"
 
 def _display_analysis_result(result):
     """Helper to display PipelineResult in a rich format."""
