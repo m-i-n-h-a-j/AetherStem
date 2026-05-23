@@ -11,6 +11,7 @@ dist/
 *.egg-info/
 .mypy_cache/
 .pytest_cache/
+.ruff_cache/
 .tox/
 
 # AI / Machine Learning
@@ -56,3 +57,17 @@ logs/*.log
 
 cache/*
 reports/*
+
+# Validation lab corpora and generated benchmark data
+golden_references/*
+fuzzing/*
+performance/*
+fixtures/*
+synthetic_audio/*
+degradation_profiles/*
+!golden_references/.gitkeep
+!fuzzing/.gitkeep
+!performance/.gitkeep
+!fixtures/.gitkeep
+!synthetic_audio/.gitkeep
+!degradation_profiles/.gitkeep

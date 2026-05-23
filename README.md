@@ -15,6 +15,7 @@ AetherStem is a professional AI-assisted music source separation platform built 
 - **Demucs-Compatible Separation**: ONNX-first runtime adapter with chunk batching, overlap-add reconstruction, stereo-safe output, and automatic padding.
 - **CLI Help and AI Guidance**: Contextual help, workflow guidance, troubleshooting, config introspection, and AI-readable command metadata.
 - **v0.6 Reconstruction Engine**: Offline-quality forensic analysis, adaptive reconstruction graphs, harmonic regeneration, spectral repair, bandwidth extension, transient/stereo recovery, mastering, evaluation, and float-safe high-resolution rendering.
+- **v0.7 Adaptive Intelligence Foundation**: Artifact intelligence, confidence gates, region classification, temporal/perceptual stability scoring, hardware-aware quality scaling, adaptive memory/scheduling plans, runtime graph fingerprints, and reproducible degradation benchmark primitives.
 - **Structured Logging**: Diagnostic tracking for all major processing stages.
 
 ## Requirements
@@ -212,6 +213,11 @@ Current required checks cover config validation, import graph validation, pytest
 - `ai/telemetry/`: Runtime events, tracing, profiling, and JSON report helpers.
 - `cli/help/`: Contextual help, AI metadata, workflow guidance, troubleshooting, and rendering.
 - `ai/reconstruction/`: v0.6 forensic analysis, adaptive reconstruction graph, restoration stages, evaluation, rendering, and diagnostics.
+- `ai/reconstruction/intelligence/`: v0.7 artifact detections, heatmaps, confidence gating, and region classification.
+- `ai/reconstruction/temporal/`: v0.7 temporal stability scoring.
+- `ai/reconstruction/perceptual/`: v0.7 psychoacoustic and perceptual scoring.
+- `ai/runtime/quality/`, `ai/runtime/profiling/`, `ai/runtime/scheduling/`, `ai/runtime/memory/`, `ai/runtime/graph/`, `ai/runtime/backends/`: v0.7 hardware-aware quality scaling, planning, graph descriptors, and backend selection contracts.
+- `ai/benchmarking/`: Controlled degradation benchmark corpus primitives.
 - `configs/`: YAML configurations for processing.
 - `cache/`: Caching layer for analysis results.
 - `reports/`: Target output folder for JSON reports.

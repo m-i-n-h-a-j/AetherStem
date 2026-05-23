@@ -29,6 +29,11 @@ def workflow_metadata() -> list[dict]:
             "commands": ["python -m validation.run_full_validation --quick"],
         },
         {
+            "name": "adaptive_reconstruction_planning",
+            "intent": "Inspect v0.7 artifact intelligence, temporal/perceptual stability, and hardware-aware planning architecture.",
+            "commands": ["aetherstem help adaptive-intelligence", "python -m pytest tests/v07"],
+        },
+        {
             "name": "reconstruct_master",
             "intent": "Create a plausibly reconstructed high-resolution master.",
             "commands": [

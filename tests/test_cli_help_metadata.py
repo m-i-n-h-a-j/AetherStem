@@ -20,7 +20,9 @@ def test_agent_metadata_is_json_and_deterministic_shape():
     assert "workflows" in payload
     assert any(command["name"] == "separate" for command in payload["commands"])
     assert any(command["name"] == "validation" for command in payload["commands"])
+    assert any(command["name"] == "adaptive-intelligence" for command in payload["commands"])
     assert payload["conventions"]["validation_reports"] == "reports/validation/"
+    assert payload["conventions"]["v0_7_spec"] == "openspec/changes/aetherstem-core-v0-7-adaptive-intelligence/"
 
 
 def test_workflow_guidance_search():
@@ -35,3 +37,10 @@ def test_workflow_guidance_includes_validation():
 
     assert workflows
     assert workflows[0]["name"] == "validate_platform"
+
+
+def test_workflow_guidance_includes_adaptive_planning():
+    workflows = workflow_for("adaptive")
+
+    assert workflows
+    assert workflows[0]["name"] == "adaptive_reconstruction_planning"

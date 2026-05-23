@@ -22,6 +22,7 @@ def agent_metadata(registry: HelpRegistry | None = None) -> dict[str, Any]:
             "config": "configs/default.yaml",
             "validation_reports": "reports/validation/",
             "validation_spec": "openspec/changes/aetherstem-validation-framework-v1-0/",
+            "v0_7_spec": "openspec/changes/aetherstem-core-v0-7-adaptive-intelligence/",
         },
     }
 
