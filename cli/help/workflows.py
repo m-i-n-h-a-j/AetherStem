@@ -24,6 +24,11 @@ def workflow_metadata() -> list[dict]:
             "commands": ["aetherstem runtime-diagnostics", "aetherstem model-registry", "aetherstem config-info ai"],
         },
         {
+            "name": "validate_platform",
+            "intent": "Run static, unit, DSP, golden-reference, and report validation before release.",
+            "commands": ["python -m validation.run_full_validation --quick"],
+        },
+        {
             "name": "reconstruct_master",
             "intent": "Create a plausibly reconstructed high-resolution master.",
             "commands": [

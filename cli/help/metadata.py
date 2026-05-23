@@ -20,10 +20,11 @@ def agent_metadata(registry: HelpRegistry | None = None) -> dict[str, Any]:
             "runtime_manifests": "ai/models/registry/manifests/",
             "model_cache": "cache/models/",
             "config": "configs/default.yaml",
+            "validation_reports": "reports/validation/",
+            "validation_spec": "openspec/changes/aetherstem-validation-framework-v1-0/",
         },
     }
 
 
 def agent_metadata_json(registry: HelpRegistry | None = None) -> str:
     return json.dumps(agent_metadata(registry), indent=2, sort_keys=True)
-

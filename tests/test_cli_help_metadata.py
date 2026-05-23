@@ -19,6 +19,8 @@ def test_agent_metadata_is_json_and_deterministic_shape():
     assert "commands" in payload
     assert "workflows" in payload
     assert any(command["name"] == "separate" for command in payload["commands"])
+    assert any(command["name"] == "validation" for command in payload["commands"])
+    assert payload["conventions"]["validation_reports"] == "reports/validation/"
 
 
 def test_workflow_guidance_search():
@@ -27,3 +29,9 @@ def test_workflow_guidance_search():
     assert workflows
     assert workflows[0]["name"] == "separate_stems"
 
+
+def test_workflow_guidance_includes_validation():
+    workflows = workflow_for("validate")
+
+    assert workflows
+    assert workflows[0]["name"] == "validate_platform"
