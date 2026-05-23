@@ -8,6 +8,7 @@ import numpy as np
 import soundfile as sf
 
 from ai.adapters.separation import SeparationOptions
+from ai.backends.registry import default_backend_registry
 from ai.compute.backend import BackendSelection, select_backend
 from ai.inference.executor import InferenceExecutor
 from ai.models.manager import ModelManager
@@ -162,18 +163,35 @@ class AudioGraph:
         config: dict[str, Any],
     ) -> dict[str, Any]:
         adapter = DemucsRuntimeAdapter()
+        runtime_diagnostics = default_backend_registry.diagnostics()
+        profile = RuntimeProfileSelector().select(config.get("runtime_profile", "auto"), runtime_diagnostics)
+        backend = config.get("backend", "auto")
+        device = config.get("device", "auto")
+        provider = config.get("provider", "auto")
+        precision = config.get("precision", "fp32")
+        if backend == "auto":
+            backend = profile.backend
+        if device == "auto":
+            device = profile.device
+        if provider == "auto":
+            provider = profile.provider
+        if precision == "fp32" and profile.precision != "fp32":
+            precision = profile.precision
         context = ExecutionContext(
-            backend=config.get("backend", selection.backend),
-            device=config.get("device", selection.device),
-            provider=config.get("provider", "auto"),
-            precision=config.get("precision", "fp32"),
-            low_memory=bool(config.get("low_memory", False)),
-            fallback_to_cpu=bool(config.get("fallback_to_cpu", True)),
-            diagnostics={"model_path": config.get("model_path") or config.get("demucs_model_path")},
+            backend=backend,
+            device=device,
+            provider=provider,
+            precision=precision,
+            low_memory=bool(config.get("low_memory", profile.low_memory)),
+            fallback_to_cpu=bool(config.get("fallback_to_cpu", profile.fallback_to_cpu)),
+            diagnostics={
+                "model_path": config.get("model_path") or config.get("demucs_model_path"),
+                "runtime_profile": profile.name,
+                "runtime_profile_reason": profile.reason,
+            },
             progress=ProgressReporter(),
         )
-        profile = RuntimeProfileSelector().select(config.get("runtime_profile", "auto"))
-        context.telemetry.emit("runtime_profile_selected", profile=profile.name, backend=profile.backend, device=profile.device, precision=profile.precision)
+        context.telemetry.emit("runtime_profile_selected", profile=profile.name, backend=backend, device=device, provider=provider, precision=precision)
         resolved_model = self._resolve_runtime_model(config, sample_rate)
         if resolved_model:
             context.telemetry.emit(

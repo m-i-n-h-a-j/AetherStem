@@ -34,7 +34,7 @@ def select_backend(preferred_backend: str = "auto", preferred_device: str = "aut
     from ai.compute.onnx_backend import OnnxBackend
     from ai.compute.torch_backend import TorchBackend
 
-    backends = [TorchBackend(), OnnxBackend()]
+    backends = [OnnxBackend(), TorchBackend()]
     if preferred_backend != "auto":
         backends = [backend for backend in backends if backend.name == preferred_backend]
 
@@ -51,4 +51,3 @@ def select_backend(preferred_backend: str = "auto", preferred_device: str = "aut
         device="cpu",
         diagnostics={"fallback": "No preferred backend available; using CPU placeholder execution."},
     )
-

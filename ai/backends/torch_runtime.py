@@ -21,9 +21,18 @@ class TorchRuntimeBackend:
         return self._torch is not None
 
     def diagnostics(self) -> dict[str, Any]:
+        cuda_available = bool(self._torch is not None and self._torch.cuda.is_available())
         return {
             "available": self.available(),
-            "cuda_available": bool(self._torch is not None and self._torch.cuda.is_available()),
+            "cuda_available": cuda_available,
+            "cuda_built": bool(self._torch is not None and self._torch.backends.cuda.is_built()),
+            "cuda_version": getattr(getattr(self._torch, "version", None), "cuda", None) if self._torch is not None else None,
+            "device_count": int(self._torch.cuda.device_count()) if cuda_available else 0,
+            "devices": [
+                self._torch.cuda.get_device_name(index)
+                for index in range(self._torch.cuda.device_count())
+            ] if cuda_available else [],
+            "fallback_reason": None if cuda_available else "torch CUDA is unavailable; install a CUDA-enabled torch wheel or use ONNX CUDA provider.",
         }
 
     def capabilities(self) -> dict[str, Any]:
@@ -45,6 +54,8 @@ class TorchRuntimeBackend:
         device = "cuda" if (context.device in {"auto", "cuda"} and cuda_available) else "cpu"
         diagnostics = dict(context.diagnostics)
         diagnostics["torch_device"] = device
+        if context.device == "cuda" and device == "cpu":
+            diagnostics["runtime_warning"] = "CUDA was requested but torch selected CPU."
         prepared = context.child(backend="torch", device=device, provider=device, diagnostics=diagnostics)
         prepared.telemetry.emit("provider_selected", backend="torch", provider=device, device=device)
         return prepared

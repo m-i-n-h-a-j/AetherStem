@@ -115,6 +115,16 @@ default_help_registry = HelpRegistry([
         related=["help runtime", "troubleshoot"],
     ),
     CommandHelp(
+        name="runtime-benchmark",
+        category="benchmarking",
+        summary="Compare ONNX CPU, CUDA, and TensorRT provider latency.",
+        usage="aetherstem runtime-benchmark [--iterations N] [--output DIR]",
+        description="Runs a deterministic synthetic ONNX workload across CPU, CUDA, and TensorRT providers when available, reporting provider initialization failures instead of silently falling back.",
+        options=["--iterations", "--output"],
+        examples=["aetherstem runtime-benchmark", "aetherstem runtime-benchmark --iterations 50"],
+        related=["runtime-diagnostics", "model-registry"],
+    ),
+    CommandHelp(
         name="benchmark",
         category="benchmarking",
         summary="Measure workflow runtime and write benchmark reports.",

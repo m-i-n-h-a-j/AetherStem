@@ -8,6 +8,7 @@ from typing import Optional
 
 from ai.backends.registry import default_backend_registry
 from ai.batch import BatchState, scan_audio_files
+from ai.benchmarking.runtime_comparison import RuntimeProviderBenchmark
 from ai.models.registry.cache import ModelCache
 from ai.models.registry.discovery import ManifestDiscovery
 from ai.models.registry.lifecycle import ModelLifecycleManager
@@ -308,6 +309,12 @@ def runtime_diagnostics():
         table.add_row(f"backend:{name}", str(diagnostics))
     for name, capabilities in default_backend_registry.capabilities().items():
         table.add_row(f"capabilities:{name}", str(capabilities))
+    onnx_diag = default_backend_registry.diagnostics().get("onnx", {})
+    torch_diag = default_backend_registry.diagnostics().get("torch", {})
+    if onnx_diag.get("cuda_provider_available") and not torch_diag.get("cuda_available"):
+        table.add_row("warning:torch_cuda", "ONNX CUDA provider is available, but torch CUDA is unavailable.")
+    if onnx_diag.get("tensorrt_provider_available"):
+        table.add_row("provider_priority", "TensorRT -> CUDA -> CPU; TensorRT will fall back to CUDA if session initialization fails.")
     for device in DeviceManager().devices():
         table.add_row(f"device:{device.name}", str({"available": device.available, "memory_total_mb": device.memory_total_mb, "diagnostics": device.diagnostics or {}}))
     profile = RuntimeProfileSelector().select(config.ai.runtime_profile, default_backend_registry.diagnostics())
@@ -315,6 +322,28 @@ def runtime_diagnostics():
     manifests, errors = ManifestDiscovery([Path(item) for item in config.ai.manifest_dirs]).discover()
     table.add_row("model_registry", str({"manifests": len(manifests), "errors": errors}))
     console.print(table)
+
+@app.command("runtime-benchmark")
+def runtime_benchmark(
+    output_dir: Optional[Path] = typer.Option(None, "--output", "-o", help="Benchmark report directory."),
+    iterations: int = typer.Option(20, "--iterations", help="Measured iterations per provider."),
+):
+    """Compares ONNX CPU, CUDA, and TensorRT providers with a deterministic synthetic workload."""
+    report = RuntimeProviderBenchmark(output_dir or Path(config.paths.benchmarks_dir)).run(iterations=iterations)
+    table = Table(title="Runtime Provider Benchmark")
+    table.add_column("Provider", style="cyan")
+    table.add_column("Status", style="magenta")
+    table.add_column("Mean ms")
+    table.add_column("Details")
+    for result in report["results"]:
+        table.add_row(
+            result["provider"],
+            result["status"],
+            "" if result.get("mean_ms") is None else f"{result['mean_ms']:.3f}",
+            result.get("error") or result.get("warning") or f"actual={result.get('actual_provider')}",
+        )
+    console.print(table)
+    console.print(f"Report: [cyan]{report['report']}[/cyan]")
 
 @app.command("help")
 def contextual_help(topic: Optional[str] = typer.Argument(None, help="Command or topic to explain.")):
@@ -557,6 +586,8 @@ def _runtime_overrides(
         values["backend"] = backend
     if device:
         values["device"] = device
+        if device == "cuda":
+            values["fallback_to_cpu"] = False
     if chunk_size:
         values["chunk_size"] = chunk_size
     if overlap is not None:
