@@ -23,8 +23,14 @@ jobs:
           python-version: "3.11"
           cache: "pip"
           cache-dependency-path: "pyproject.toml"
+      - name: Install FFmpeg
+        run: choco install ffmpeg -y --no-progress
       - name: Install package
         run: python -m pip install -e ".[validation]"
+      - name: Verify FFmpeg tools
+        run: |
+          ffmpeg -version
+          ffprobe -version
       - name: Run validation framework
         run: python -m validation.run_full_validation --quick
       - name: Upload validation reports
