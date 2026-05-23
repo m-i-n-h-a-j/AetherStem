@@ -10,8 +10,12 @@ def workflow_metadata() -> list[dict]:
         },
         {
             "name": "separate_stems",
-            "intent": "Export vocals, drums, bass, and other stems.",
-            "commands": ["aetherstem runtime-diagnostics", "aetherstem separate INPUT --backend onnx --device cpu"],
+            "intent": "Export vocals, drums, bass, and other stems without auto-running restoration stages.",
+            "commands": [
+                "aetherstem runtime-diagnostics",
+                "aetherstem separate INPUT --backend onnx --device cuda --chunk-size 524288 --overlap 0.85",
+                "aetherstem separate INPUT --backend onnx --device cpu",
+            ],
         },
         {
             "name": "restore_audio",

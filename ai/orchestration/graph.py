@@ -59,6 +59,14 @@ class AudioGraph:
     ) -> dict[str, Any]:
         config = config or {}
         plan = plan or self.decision_engine.plan(analysis, quality, force=force)
+        if workflow == "separate" and force == ["separate"]:
+            plan.stages = [stage for stage in plan.stages if stage in {"separate", "validate", "export"}]
+            plan.decisions = [
+                decision.model_copy(update={"enabled": decision.stage in plan.stages})
+                if decision.stage in {"denoise", "declip", "enhance"}
+                else decision
+                for decision in plan.decisions
+            ]
         selection = select_backend(config.get("backend", "auto"), config.get("device", "auto"))
         run_dir = self._run_dir(input_path, workflow)
         run_dir.mkdir(parents=True, exist_ok=True)
@@ -127,7 +135,7 @@ class AudioGraph:
         model_name = model_for_stage("separate", configured=config.get("models", {}))
         if model_name is None:
             return {"skipped": True, "reason": "No separation model registered."}
-        if model_name == "demucs-runtime":
+        if model_name == "demucs-runtime" or (model_name == "demucs-placeholder" and selection.backend == "onnx"):
             return self._run_runtime_separation(audio, sample_rate, selection, run_dir, config)
         model = self.model_manager.get(model_name, selection)
         result = self.executor.run(

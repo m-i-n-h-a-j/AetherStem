@@ -25,9 +25,12 @@ models/checkpoints/
 # Audio (Temp/Output)
 temp/*
 output/*
+exports/*
 logs/*.log
+benchmarks/*.json
 !temp/.gitkeep
 !output/.gitkeep
+!exports/.gitkeep
 !logs/.gitkeep
 
 # Common audio formats (to avoid accidental commits of large datasets)

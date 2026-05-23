@@ -16,10 +16,12 @@ def agent_metadata(registry: HelpRegistry | None = None) -> dict[str, Any]:
         "workflows": workflow_metadata(),
         "conventions": {
             "exports": "exports/",
+            "benchmarks": "benchmarks/",
             "reports": "reports/",
             "runtime_manifests": "ai/models/registry/manifests/",
             "model_cache": "cache/models/",
             "config": "configs/default.yaml",
+            "runtime_artifacts": "Generated exports, benchmark JSON, cache, reports, logs, output previews, and validation reports are runtime artifacts and are ignored except .gitkeep placeholders.",
             "validation_reports": "reports/validation/",
             "validation_spec": "openspec/changes/aetherstem-validation-framework-v1-0/",
             "v0_7_spec": "openspec/changes/aetherstem-core-v0-7-adaptive-intelligence/",
