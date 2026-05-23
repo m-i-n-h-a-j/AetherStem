@@ -12,12 +12,17 @@ from ai.compute.backend import BackendSelection, select_backend
 from ai.inference.executor import InferenceExecutor
 from ai.models.manager import ModelManager
 from ai.models.demucs.runtime_adapter import DemucsRuntimeAdapter
+from ai.models.registry.cache import ModelCache
+from ai.models.registry.discovery import ManifestDiscovery
+from ai.models.registry.resolver import ModelResolver
+from ai.optimization.runtime_profiles import RuntimeProfileSelector
 from ai.orchestration.decision_engine import DecisionEngine, ProcessingPlan
 from ai.orchestration.routing import model_for_stage
 from ai.runtime.audio_buffer import AudioBuffer
 from ai.runtime.context import ExecutionContext
 from ai.runtime.executor import RuntimeExecutor
 from ai.runtime.progress import ProgressReporter
+from ai.telemetry.reports import write_json_report
 from ai.validation.quality_comparator import QualityComparator
 from dsp.visualizer import generate_spectrogram, generate_waveform
 
@@ -159,6 +164,23 @@ class AudioGraph:
             diagnostics={"model_path": config.get("model_path") or config.get("demucs_model_path")},
             progress=ProgressReporter(),
         )
+        profile = RuntimeProfileSelector().select(config.get("runtime_profile", "auto"))
+        context.telemetry.emit("runtime_profile_selected", profile=profile.name, backend=profile.backend, device=profile.device, precision=profile.precision)
+        resolved_model = self._resolve_runtime_model(config, sample_rate)
+        if resolved_model:
+            context.telemetry.emit(
+                "model_resolved",
+                model_id=resolved_model.manifest.id,
+                version=resolved_model.manifest.version,
+                backend=resolved_model.backend,
+                precision=resolved_model.precision,
+            )
+            if (
+                resolved_model.asset_path
+                and not config.get("model_path")
+                and resolved_model.diagnostics.get("cache", {}).get("available")
+            ):
+                context.diagnostics["model_path"] = str(resolved_model.asset_path)
         options = SeparationOptions(
             stems=["vocals", "drums", "bass", "other"],
             chunk_size=int(config.get("chunk_size", 44100 * 10)),
@@ -175,13 +197,40 @@ class AudioGraph:
             path = stems_dir / f"{name}.wav"
             sf.write(path, _sf_audio(stem.audio.samples), stem.audio.sample_rate)
             paths[name] = str(path)
+        telemetry_report = None
+        profile_report = None
+        if config.get("telemetry_enabled"):
+            telemetry_report = str(write_json_report(run_dir / "telemetry.json", result.diagnostics.get("telemetry", context.telemetry.model_dump())))
+        if config.get("profiling_enabled"):
+            profile_report = str(write_json_report(run_dir / "profile.json", context.profiler.report()))
         return {
             "model": result.metadata.name,
             "runtime": "v0.4",
             "warnings": result.warnings,
-            "diagnostics": result.diagnostics,
+            "diagnostics": {**result.diagnostics, "telemetry": context.telemetry.summary(), "profile": context.profiler.report()},
+            "telemetry_report": telemetry_report,
+            "profile_report": profile_report,
             "stems": paths,
         }
+
+    def _resolve_runtime_model(self, config: dict[str, Any], sample_rate: int):
+        try:
+            roots = [Path(item) for item in config.get("manifest_dirs", ["ai/models/registry/manifests"])]
+            manifests, errors = ManifestDiscovery(roots).discover()
+            if errors:
+                return None
+            return ModelResolver(manifests, ModelCache(config.get("model_cache_dir", "cache/models"))).resolve(
+                task="separate",
+                backend=config.get("backend", "auto"),
+                device=config.get("device", "auto"),
+                precision=config.get("precision", "fp32"),
+                sample_rate=None if config.get("allow_sample_rate_mismatch", True) else sample_rate,
+                channels=2,
+                stems=["vocals", "drums", "bass", "other"],
+                require_asset=False,
+            )
+        except Exception:
+            return None
 
     def _export_audio(self, audio: np.ndarray, sample_rate: int, run_dir: Path, workflow: str, accepted: bool) -> dict[str, str]:
         target_dir = run_dir if accepted else run_dir / "rejected"

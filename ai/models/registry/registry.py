@@ -4,8 +4,7 @@ from dataclasses import dataclass
 from typing import Callable
 
 from ai.models.base import AudioModel
-from ai.models.metadata import ModelCapabilities, ModelCompatibility, ModelMetadata
-
+from ai.models.metadata import ModelCompatibility, ModelMetadata
 
 ModelFactory = Callable[[], AudioModel]
 

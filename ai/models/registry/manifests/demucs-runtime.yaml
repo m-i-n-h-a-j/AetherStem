@@ -1,0 +1,51 @@
+id: demucs-runtime-default
+name: Demucs Runtime Default
+version: 0.5.0
+architecture: demucs-compatible
+task: separate
+supported_backends:
+  - onnx
+  - torch
+supported_precisions:
+  - fp32
+  - fp16
+sample_rate: 44100
+channels: 2
+stems:
+  - vocals
+  - drums
+  - bass
+  - other
+sha256: ""
+model_format: onnx
+description: Local Demucs-compatible runtime manifest. Configure an asset path to enable real ONNX execution.
+minimum_runtime_version: 0.5.0
+input_signature:
+  name: audio
+  shape:
+    - batch
+    - channels
+    - samples
+  dtype: float32
+  layout: bcs
+  semantics: audio
+output_signature:
+  name: stems
+  shape:
+    - batch
+    - stems
+    - channels
+    - samples
+  dtype: float32
+  layout: bscs
+  semantics: stems
+asset:
+  path: null
+  url: null
+  cache_key: demucs-runtime-default.onnx
+  sha256: null
+quantization:
+  int8_ready: false
+memory_hints:
+  multiplier: 6.0
+

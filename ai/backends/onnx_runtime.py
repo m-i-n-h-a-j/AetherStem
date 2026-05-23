@@ -30,6 +30,16 @@ class OnnxRuntimeBackend:
     def diagnostics(self) -> dict[str, Any]:
         return {"available": self.available(), "providers": self.providers()}
 
+    def capabilities(self) -> dict[str, Any]:
+        providers = self.providers()
+        return {
+            "backend": self.name,
+            "available": self.available(),
+            "providers": providers,
+            "precisions": ["fp32", "fp16"] if "CUDAExecutionProvider" in providers else ["fp32"],
+            "features": ["session_cache", "provider_selection", "profiling_hooks"],
+        }
+
     def prepare_context(self, context: ExecutionContext) -> ExecutionContext:
         providers = self.providers()
         requested = context.provider
@@ -54,7 +64,9 @@ class OnnxRuntimeBackend:
         if context.precision == "fp16":
             diagnostics["precision_warning"] = "fp16 requested; model conversion is not performed by v0.4 runtime."
         device = "cuda" if selected == "CUDAExecutionProvider" else "cpu"
-        return context.child(backend="onnx", provider=selected, device=device, diagnostics=diagnostics)
+        prepared = context.child(backend="onnx", provider=selected, device=device, diagnostics=diagnostics)
+        prepared.telemetry.emit("provider_selected", backend="onnx", provider=selected, device=device)
+        return prepared
 
     def session(self, model_path: Path, context: ExecutionContext):
         if self._ort is None:
@@ -79,4 +91,3 @@ def _provider_name(value: str) -> str:
     if normalized in {"cuda", "cudaexecutionprovider"}:
         return "CUDAExecutionProvider"
     return value
-

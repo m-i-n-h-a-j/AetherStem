@@ -1,6 +1,6 @@
 # AetherStem
 
-AetherStem is a professional AI-assisted music source separation platform built for Windows. It provides deterministic DSP analysis, AI orchestration, and a v0.4 inference runtime for chunked separation workflows.
+AetherStem is a professional AI-assisted music source separation platform built for Windows. It provides deterministic DSP analysis, AI orchestration, a production-oriented inference runtime, and CLI guidance for both humans and external AI coding agents.
 
 ## Features
 
@@ -10,8 +10,10 @@ AetherStem is a professional AI-assisted music source separation platform built 
 - **Modular Architecture**: Clean separation of CLI, I/O, DSP, and AI components.
 - **AI Orchestration**: DSP-driven restore, separate, denoise, enhance, preset, batch, and benchmark workflows.
 - **v0.4 Runtime Core**: Canonical audio buffers, tensor contracts, execution contexts, cancellation, progress, chunk scheduling, and streaming-compatible chunk flow.
+- **v0.5 Runtime Platform**: Manifest-based model discovery, cache/checksum lifecycle, runtime profiles, precision policy, telemetry, profiling, and expanded diagnostics.
 - **Runtime Backends**: ONNX Runtime backend with CPU/CUDA provider selection and optional PyTorch runtime fallback hooks.
 - **Demucs-Compatible Separation**: ONNX-first runtime adapter with chunk batching, overlap-add reconstruction, stereo-safe output, and automatic padding.
+- **CLI Help and AI Guidance**: Contextual help, workflow guidance, troubleshooting, config introspection, and AI-readable command metadata.
 - **Structured Logging**: Diagnostic tracking for all major processing stages.
 
 ## Requirements
@@ -116,7 +118,35 @@ The Demucs-compatible runtime adapter prefers an ONNX model path when configured
 aetherstem runtime-diagnostics
 ```
 
-Prints available runtime backends, ONNX providers, Torch CUDA status, device summaries, and optional dependency availability.
+Prints available runtime backends, backend capabilities, ONNX providers, Torch CUDA status, device summaries, selected runtime profile, and model registry status.
+
+### Contextual Help and AI Guidance
+```bash
+aetherstem help
+aetherstem help separate
+aetherstem help runtime
+aetherstem guide separate
+aetherstem troubleshoot
+aetherstem config-info ai
+aetherstem model-registry
+aetherstem ai-metadata
+```
+
+`ai-metadata` emits deterministic JSON for external AI agents and tool runners. It includes commands, examples, workflows, diagnostics guidance, and project conventions without terminal markup.
+
+### Model Registry and Runtime Profiles
+
+v0.5 discovers local model manifests from `ai/models/registry/manifests/` by default and reports cache state without loading model weights. Configure runtime model assets in YAML manifests or through `ai.model_path`.
+
+Default runtime config lives in `configs/default.yaml`:
+
+- `ai.manifest_dirs`
+- `ai.model_cache_dir`
+- `ai.runtime_profile`
+- `ai.telemetry_enabled`
+- `ai.profiling_enabled`
+- `ai.precision`
+- `ai.model_path`
 
 ## Running Tests
 
@@ -136,6 +166,10 @@ pytest
 - `ai/backends/`: Runtime backend registry and ONNX/PyTorch backend adapters.
 - `ai/adapters/`: Strict inference-only adapter interfaces.
 - `ai/models/demucs/`: Demucs-compatible runtime separation adapter and reconstruction utilities.
+- `ai/models/registry/`: v0.5 model manifests, discovery, resolver, compatibility, cache, and lifecycle management.
+- `ai/optimization/`: Precision policy, quantization metadata, calibration hooks, and runtime profile selection.
+- `ai/telemetry/`: Runtime events, tracing, profiling, and JSON report helpers.
+- `cli/help/`: Contextual help, AI metadata, workflow guidance, troubleshooting, and rendering.
 - `configs/`: YAML configurations for processing.
 - `cache/`: Caching layer for analysis results.
 - `reports/`: Target output folder for JSON reports.

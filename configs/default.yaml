@@ -33,6 +33,12 @@ ai:
   precision: "fp32"
   low_memory: false
   model_path: null
+  manifest_dirs:
+    - "ai/models/registry/manifests"
+  model_cache_dir: "cache/models"
+  runtime_profile: "auto"
+  telemetry_enabled: false
+  profiling_enabled: false
 
 # Path Settings
 paths:

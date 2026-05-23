@@ -16,3 +16,12 @@ Core runtime types:
 - `ProgressReporter`: records and forwards progress events.
 - `CancellationToken`: raises a structured cancellation error between chunks.
 
+v0.5 extends this with:
+
+- manifest-based model discovery and resolution;
+- cache/checksum lifecycle diagnostics;
+- runtime profile selection;
+- precision policy;
+- structured telemetry events;
+- runtime profiling spans;
+- AI-readable CLI metadata and troubleshooting guidance.

@@ -30,6 +30,11 @@ class AIConfig:
     precision: str = "fp32"
     low_memory: bool = False
     model_path: Optional[str] = None
+    manifest_dirs: list[str] = field(default_factory=lambda: ["ai/models/registry/manifests"])
+    model_cache_dir: str = "cache/models"
+    runtime_profile: str = "auto"
+    telemetry_enabled: bool = False
+    profiling_enabled: bool = False
 
 @dataclass
 class PathConfig:

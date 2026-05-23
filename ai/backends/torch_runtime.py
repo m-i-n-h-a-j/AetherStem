@@ -26,6 +26,16 @@ class TorchRuntimeBackend:
             "cuda_available": bool(self._torch is not None and self._torch.cuda.is_available()),
         }
 
+    def capabilities(self) -> dict[str, Any]:
+        cuda = bool(self._torch is not None and self._torch.cuda.is_available())
+        return {
+            "backend": self.name,
+            "available": self.available(),
+            "providers": ["cuda", "cpu"] if cuda else ["cpu"] if self.available() else [],
+            "precisions": ["fp32", "fp16"] if cuda else ["fp32"],
+            "features": ["fallback_boundary"],
+        }
+
     def prepare_context(self, context: ExecutionContext) -> ExecutionContext:
         if self._torch is None:
             raise RuntimeError("torch is not installed.")
@@ -35,5 +45,6 @@ class TorchRuntimeBackend:
         device = "cuda" if (context.device in {"auto", "cuda"} and cuda_available) else "cpu"
         diagnostics = dict(context.diagnostics)
         diagnostics["torch_device"] = device
-        return context.child(backend="torch", device=device, provider=device, diagnostics=diagnostics)
-
+        prepared = context.child(backend="torch", device=device, provider=device, diagnostics=diagnostics)
+        prepared.telemetry.emit("provider_selected", backend="torch", provider=device, device=device)
+        return prepared

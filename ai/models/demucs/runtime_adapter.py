@@ -65,11 +65,15 @@ class DemucsRuntimeAdapter:
         prepared_context = context
         for index, chunk in enumerate(plan.chunks, start=1):
             context.cancellation.throw_if_cancelled()
-            if self._onnx is not None:
-                stem_outputs, prepared_context = self._run_onnx_chunk(chunk.samples, context, options.stems)
-            else:
-                stem_outputs = deterministic_stem_projection(chunk.samples, options.stems)
-                prepared_context.diagnostics["fallback"] = "No ONNX model configured; used deterministic runtime projection."
+            with context.profiler.span("separate_chunk", index=index, samples=chunk.end - chunk.start):
+                context.telemetry.emit("chunk_started", stage="separate", index=index, total=len(plan.chunks))
+                if self._onnx is not None:
+                    stem_outputs, prepared_context = self._run_onnx_chunk(chunk.samples, context, options.stems)
+                else:
+                    stem_outputs = deterministic_stem_projection(chunk.samples, options.stems)
+                    prepared_context.diagnostics["fallback"] = "No ONNX model configured; used deterministic runtime projection."
+                    context.telemetry.emit("fallback_triggered", reason="no_onnx_model_configured", target="deterministic_projection")
+                context.telemetry.emit("chunk_completed", stage="separate", index=index, total=len(plan.chunks))
             for stem, values in stem_outputs.items():
                 per_stem_chunks.setdefault(stem, []).append((chunk, values))
             context.progress.report("separate", index, len(plan.chunks), "processed chunk")
@@ -92,6 +96,8 @@ class DemucsRuntimeAdapter:
                 "batch_size": plan.batch_size,
                 "chunks": len(plan.chunks),
                 "estimated_memory_mb": plan.estimated_memory_mb,
+                "telemetry": context.telemetry.model_dump(),
+                "profile": context.profiler.report(),
             },
             duration_ms=(time.perf_counter() - started) * 1000,
         )
@@ -115,4 +121,3 @@ class DemucsRuntimeAdapter:
         if output.ndim == 2:
             return {stems[0]: output}, prepared_context
         raise RuntimeError(f"Unsupported Demucs ONNX output shape: {output.shape}")
-

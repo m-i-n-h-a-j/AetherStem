@@ -14,6 +14,8 @@ class RuntimeBackend(Protocol):
     def diagnostics(self) -> dict[str, Any]:
         ...
 
-    def prepare_context(self, context: ExecutionContext) -> ExecutionContext:
+    def capabilities(self) -> dict[str, Any]:
         ...
 
+    def prepare_context(self, context: ExecutionContext) -> ExecutionContext:
+        ...

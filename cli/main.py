@@ -1,4 +1,5 @@
 import typer
+import json
 from pathlib import Path
 from rich.console import Console
 from rich.table import Table
@@ -7,11 +8,20 @@ from typing import Optional
 
 from ai.backends.registry import default_backend_registry
 from ai.batch import BatchState, scan_audio_files
+from ai.models.registry.cache import ModelCache
+from ai.models.registry.discovery import ManifestDiscovery
+from ai.models.registry.lifecycle import ModelLifecycleManager
+from ai.optimization.runtime_profiles import RuntimeProfileSelector
 from ai.orchestration.decision_engine import DecisionEngine
 from ai.orchestration.graph import AudioGraph
 from ai.orchestration.presets import PresetLoader
 from ai.runtime.device_manager import DeviceManager
 from benchmarks.runner import BenchmarkRunner
+from cli.help.diagnostics import troubleshooting_report
+from cli.help.formatter import HelpFormatter
+from cli.help.metadata import agent_metadata_json
+from cli.help.registry import default_help_registry
+from cli.help.workflows import workflow_for, workflow_metadata
 from utils.config_loader import config
 from utils.logger import logger
 from audio_io.audio_inspector import inspect_audio, validate_input
@@ -36,6 +46,11 @@ def _ai_config(extra: dict | None = None) -> dict:
         "low_memory": config.ai.low_memory,
         "model_path": config.ai.model_path,
         "fallback_to_cpu": config.pipeline.fallback_to_cpu,
+        "manifest_dirs": config.ai.manifest_dirs,
+        "model_cache_dir": config.ai.model_cache_dir,
+        "runtime_profile": config.ai.runtime_profile,
+        "telemetry_enabled": config.ai.telemetry_enabled,
+        "profiling_enabled": config.ai.profiling_enabled,
         "denoise_strength": config.ai.denoise_strength,
         "enhancement_intensity": config.ai.enhancement_intensity,
         "models": config.ai.models,
@@ -284,8 +299,127 @@ def runtime_diagnostics():
     table.add_column("Status", style="magenta")
     for name, diagnostics in default_backend_registry.diagnostics().items():
         table.add_row(f"backend:{name}", str(diagnostics))
+    for name, capabilities in default_backend_registry.capabilities().items():
+        table.add_row(f"capabilities:{name}", str(capabilities))
     for device in DeviceManager().devices():
         table.add_row(f"device:{device.name}", str({"available": device.available, "memory_total_mb": device.memory_total_mb, "diagnostics": device.diagnostics or {}}))
+    profile = RuntimeProfileSelector().select(config.ai.runtime_profile, default_backend_registry.diagnostics())
+    table.add_row("runtime_profile", str(profile))
+    manifests, errors = ManifestDiscovery([Path(item) for item in config.ai.manifest_dirs]).discover()
+    table.add_row("model_registry", str({"manifests": len(manifests), "errors": errors}))
+    console.print(table)
+
+@app.command("help")
+def contextual_help(topic: Optional[str] = typer.Argument(None, help="Command or topic to explain.")):
+    """Shows contextual AetherStem help and examples."""
+    formatter = HelpFormatter(console)
+    if not topic:
+        formatter.overview(default_help_registry)
+        return
+    command = default_help_registry.get(topic)
+    if command:
+        formatter.command(command)
+        return
+    matches = default_help_registry.search(topic)
+    if matches:
+        table = Table(title=f"Help matches for {topic}")
+        table.add_column("Command", style="cyan")
+        table.add_column("Summary")
+        for match in matches:
+            table.add_row(match.name, match.summary)
+        console.print(table)
+        return
+    console.print(f"[red]No help topic found:[/red] {topic}")
+    raise typer.Exit(code=1)
+
+@app.command("ai-metadata")
+def ai_metadata():
+    """Exports deterministic JSON metadata for external AI agents."""
+    console.print_json(agent_metadata_json())
+
+@app.command("guide")
+def guide(topic: Optional[str] = typer.Argument(None, help="Workflow topic.")):
+    """Shows guided workflow recommendations without executing them."""
+    workflows = workflow_for(topic) if topic else workflow_metadata()
+    table = Table(title="AetherStem Workflow Guide")
+    table.add_column("Workflow", style="cyan")
+    table.add_column("Intent", style="magenta")
+    table.add_column("Commands")
+    for item in workflows:
+        table.add_row(item["name"], item["intent"], "\n".join(item["commands"]))
+    console.print(table)
+
+@app.command("troubleshoot")
+def troubleshoot(as_json: bool = typer.Option(False, "--json", help="Emit JSON diagnostics.")):
+    """Provides production-safe runtime troubleshooting guidance."""
+    report = troubleshooting_report(config)
+    if as_json:
+        console.print_json(json.dumps(report, indent=2, default=str))
+        return
+    table = Table(title="Troubleshooting")
+    table.add_column("Issue", style="cyan")
+    table.add_column("Recommendation", style="magenta")
+    for issue in report["issues"]:
+        table.add_row(issue["issue"], issue["recommendation"])
+    if not report["issues"]:
+        table.add_row("none", "No common runtime setup issues detected.")
+    console.print(table)
+
+@app.command("config-info")
+def config_info(
+    section: Optional[str] = typer.Argument(None, help="Config section: audio, pipeline, ai, paths, metadata."),
+    as_json: bool = typer.Option(False, "--json", help="Emit JSON."),
+):
+    """Inspects active configuration values."""
+    data = _config_dict()
+    if section:
+        if section not in data:
+            console.print(f"[red]Unknown config section:[/red] {section}")
+            raise typer.Exit(code=1)
+        data = {section: data[section]}
+    if as_json:
+        console.print_json(json.dumps(data, indent=2, default=str))
+        return
+    table = Table(title="AetherStem Config")
+    table.add_column("Section", style="cyan")
+    table.add_column("Values", style="magenta")
+    for key, value in data.items():
+        table.add_row(key, json.dumps(value, indent=2, default=str))
+    console.print(table)
+
+@app.command("model-registry")
+def model_registry(as_json: bool = typer.Option(False, "--json", help="Emit JSON.")):
+    """Lists discovered v0.5 model manifests and cache status."""
+    manifests, errors = ManifestDiscovery([Path(item) for item in config.ai.manifest_dirs]).discover()
+    lifecycle = ModelLifecycleManager(ModelCache(config.ai.model_cache_dir))
+    payload = {
+        "manifests": [
+            {
+                "id": manifest.id,
+                "version": manifest.version,
+                "architecture": manifest.architecture,
+                "task": manifest.task,
+                "backends": manifest.supported_backends,
+                "precisions": manifest.supported_precisions,
+                "cache": lifecycle.status(manifest),
+            }
+            for manifest in manifests
+        ],
+        "errors": errors,
+    }
+    if as_json:
+        console.print_json(json.dumps(payload, indent=2, default=str))
+        return
+    table = Table(title="Model Registry")
+    table.add_column("ID", style="cyan")
+    table.add_column("Version", style="magenta")
+    table.add_column("Task")
+    table.add_column("Backends")
+    table.add_column("Cache")
+    for item in payload["manifests"]:
+        table.add_row(item["id"], item["version"], item["task"], ", ".join(item["backends"]), str(item["cache"]["cache"]))
+    for error in errors:
+        table.add_row(str(error.get("path")), "error", "", "", str(error.get("error")))
     console.print(table)
 
 @app.command("preset")
@@ -361,6 +495,15 @@ def _runtime_overrides(
     if low_memory:
         values["low_memory"] = True
     return values
+
+def _config_dict() -> dict:
+    return {
+        "audio": vars(config.audio),
+        "pipeline": vars(config.pipeline),
+        "ai": vars(config.ai),
+        "paths": vars(config.paths),
+        "metadata": config.metadata,
+    }
 
 def _display_analysis_result(result):
     """Helper to display PipelineResult in a rich format."""

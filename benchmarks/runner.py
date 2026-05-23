@@ -24,6 +24,8 @@ class BenchmarkRunner:
             "backend": _stage_value(result, "backend"),
             "provider": _stage_value(result, "provider"),
             "chunk_scheduler": _chunk_scheduler_metrics(result),
+            "telemetry": _telemetry_summary(result),
+            "profile": _profile_summary(result),
             "result": result,
         }
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -64,3 +66,15 @@ def _chunk_scheduler_metrics(result: Any) -> dict[str, Any]:
         "chunks": diagnostics.get("chunks"),
         "estimated_memory_mb": diagnostics.get("estimated_memory_mb"),
     }
+
+
+def _telemetry_summary(result: Any) -> dict[str, Any]:
+    if not isinstance(result, dict):
+        return {}
+    return result.get("stages", {}).get("separate", {}).get("diagnostics", {}).get("telemetry", {})
+
+
+def _profile_summary(result: Any) -> dict[str, Any]:
+    if not isinstance(result, dict):
+        return {}
+    return result.get("stages", {}).get("separate", {}).get("diagnostics", {}).get("profile", {})

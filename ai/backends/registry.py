@@ -17,6 +17,9 @@ class BackendRegistry:
     def diagnostics(self) -> dict:
         return {name: backend.diagnostics() for name, backend in sorted(self._backends.items())}
 
+    def capabilities(self) -> dict:
+        return {name: backend.capabilities() for name, backend in sorted(self._backends.items())}
+
     def resolve(self, context: ExecutionContext) -> RuntimeBackend:
         if context.backend != "auto":
             backend = self._backends.get(context.backend)
@@ -44,4 +47,3 @@ def _register_defaults() -> None:
 
 
 _register_defaults()
-

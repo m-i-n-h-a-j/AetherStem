@@ -5,6 +5,8 @@ from typing import Any
 
 from ai.runtime.cancellation import CancellationToken
 from ai.runtime.progress import ProgressReporter
+from ai.telemetry.profiler import RuntimeProfiler
+from ai.telemetry.tracer import RuntimeTracer
 
 
 @dataclass
@@ -18,6 +20,8 @@ class ExecutionContext:
     diagnostics: dict[str, Any] = field(default_factory=dict)
     progress: ProgressReporter = field(default_factory=ProgressReporter)
     cancellation: CancellationToken = field(default_factory=CancellationToken)
+    telemetry: RuntimeTracer = field(default_factory=RuntimeTracer)
+    profiler: RuntimeProfiler = field(default_factory=RuntimeProfiler)
 
     def child(self, **updates) -> "ExecutionContext":
         values = {
@@ -30,7 +34,8 @@ class ExecutionContext:
             "diagnostics": dict(self.diagnostics),
             "progress": self.progress,
             "cancellation": self.cancellation,
+            "telemetry": self.telemetry,
+            "profiler": self.profiler,
         }
         values.update(updates)
         return ExecutionContext(**values)
-
